@@ -11,7 +11,7 @@ export const site = {
     instagram: '',
     location: '대구경북과학기술원(DGIST)',
     leaders: [
-      { role: '대표', name: '길한겸', phone: '010-3222-6091', email: 'hangyum190323@dgist.ac.kr' },
+      { role: '대표', name: '길한겸', phone: '010-3222-6091', email: 'hangyum070907@dgist.ac.kr' },
       { role: '부대표', name: '정우진', phone: '010-3184-3270', email: 'jeromesone@dgist.ac.kr' },
     ],
   },
