@@ -3,7 +3,7 @@ import FilterTabs from '../components/FilterTabs'
 import PageHeader from '../components/PageHeader'
 import ProjectCard from '../components/ProjectCard'
 import Section from '../components/Section'
-import { projects, projectStatuses } from '../content/projects'
+import { projects, projectsEmptyMessage, projectStatuses } from '../content/projects'
 import type { ProjectStatus } from '../content/projects'
 import { usePageTitle } from '../lib/usePageTitle'
 
@@ -24,7 +24,7 @@ export default function Projects() {
             ))}
           </div>
         ) : (
-          <p className="empty">해당하는 프로젝트가 없습니다.</p>
+          <p className="empty">{projects.length ? '해당하는 프로젝트가 없습니다.' : projectsEmptyMessage}</p>
         )}
       </Section>
     </>
