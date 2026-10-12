@@ -28,6 +28,8 @@
 .flight-scene__axis span + span { top: 21px; left: 32px; }
 .flight-scene figcaption { position: absolute; bottom: 8%; left: 0; right: 0; display: flex; justify-content: center; align-items: center; gap: 8px; font-size: 10px; color: #93a5c7; }
 .flight-scene__dot { width: 4px; height: 4px; border-radius: 50%; background: #a8bbdd; }
+.flight-scene figcaption:has(.flight-scene__play) { flex-direction: column; gap: 0; bottom: 5%; }
+.flight-scene__play { border: 0; background: transparent; color: #cfdef7; font: inherit; min-height: 44px; padding: 0 12px; text-decoration: underline; text-underline-offset: 4px; cursor: pointer; }
 .flight-scene__note { position: absolute; bottom: 3%; left: 0; right: 0; text-align: center; color: #596b8d; font-size: 7px; letter-spacing: .18em; }
 .launch__strip { display: grid; grid-template-columns: 1fr 1fr 1.35fr .8fr; align-items: center; border-top: 1px solid #9aafd221; }
 .launch__strip p { display: flex; align-items: center; gap: 15px; min-height: 78px; font-size: 12px; color: #bec8dd; }

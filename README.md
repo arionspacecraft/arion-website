@@ -50,6 +50,8 @@ src/
 
 공개 사이트: https://arionspacecraft.github.io/arion-website/
 
+운영 저장소와 배포 소유자는 `arionspacecraft/arion-website`입니다. 원격 수정·배포에는 `arionspacecraft`로 인증된 GitHub 연결을 사용합니다. 개인 계정 저장소로 만들거나 배포하지 않습니다.
+
 `main` 브랜치에 push하면 `.github/workflows/deploy.yml`이 자동 빌드·배포합니다.
 저장소 Settings → Pages의 Source는 GitHub Actions로 설정합니다. Node.js 24를 사용합니다.
 
@@ -57,3 +59,7 @@ src/
 - `scripts/create-route-pages.mjs`가 목록과 상세 페이지의 진입 파일을 생성하여 직접 접속·새로고침도 지원합니다.
 - 프로젝트·소식이 추가되면 빌드 시 해당 경로도 자동 생성됩니다.
 - 저장소에 들어 있는 예시 소식·제원과 비어 있는 연락처는 운영 시 실제 정보로 교체하세요.
+
+## 로켓이 정지된 경우
+
+기기의 ‘동작 줄이기’ 설정을 감지하면 처음에는 정지 화면을 표시합니다. 상단 ▶ 버튼이나 로켓 아래 ‘로켓 애니메이션 재생’을 누르면 이 방문 중에는 직접 선택한 재생 상태를 사용합니다. 페이지를 새로 열거나 새로고침하면 기기 설정을 다시 따릅니다. 화면 밖이나 비활성 탭에서는 계속 렌더링을 멈춥니다.

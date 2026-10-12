@@ -23,7 +23,7 @@ export default function Header() {
           {nav.map((item, index) => <NavLink key={item.to} to={item.to} className="nav__link" onClick={close}><span className="nav__index mono">0{index + 1}</span>{item.label}</NavLink>)}
         </nav>
         <div className="header__actions">
-          <button className="motion-toggle" onClick={toggle} type="button" aria-label={paused ? '애니메이션 재생' : '애니메이션 일시 정지'} aria-pressed={paused} title={paused ? '애니메이션 재생 (시스템 동작 줄이기 설정 우선)' : '애니메이션 일시 정지'}><span aria-hidden="true">{paused ? '▶' : 'Ⅱ'}</span></button>
+          <button className="motion-toggle" onClick={toggle} type="button" aria-label={paused ? '애니메이션 재생' : '애니메이션 일시 정지'} aria-pressed={paused} title={paused ? '애니메이션 재생' : '애니메이션 일시 정지'}><span aria-hidden="true">{paused ? '▶' : 'Ⅱ'}</span></button>
           <Link to="/recruit" className="header__join" onClick={close}>JOIN US <span aria-hidden="true">↗</span></Link>
           <button ref={menuButton} type="button" className={`header__toggle${open ? ' is-open' : ''}`} aria-label={open ? '메뉴 닫기' : '메뉴 열기'} aria-expanded={open} aria-controls="site-nav" onClick={() => setOpen((value) => !value)}><span /><span /></button>
         </div>

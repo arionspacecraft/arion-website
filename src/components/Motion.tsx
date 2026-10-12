@@ -1,10 +1,11 @@
 import { createContext, useContext, useEffect, useState } from 'react'
 import type { ReactNode } from 'react'
 
-const MotionContext = createContext({ paused: false, toggle: () => {} })
+const MotionContext = createContext({ paused: false, systemPaused: false, toggle: () => {} })
 
 export function MotionProvider({ children }: { children: ReactNode }) {
-  const [userPaused, setUserPaused] = useState(false)
+  // Follow the device preference until the visitor explicitly chooses play/pause.
+  const [userPaused, setUserPaused] = useState<boolean | null>(null)
   const [reduced, setReduced] = useState(() => window.matchMedia('(prefers-reduced-motion: reduce)').matches)
   useEffect(() => {
     const query = window.matchMedia('(prefers-reduced-motion: reduce)')
@@ -12,9 +13,10 @@ export function MotionProvider({ children }: { children: ReactNode }) {
     query.addEventListener('change', update)
     return () => query.removeEventListener('change', update)
   }, [])
-  const paused = userPaused || reduced
+  const paused = userPaused ?? reduced
+  const systemPaused = userPaused === null && reduced
   return (
-    <MotionContext.Provider value={{ paused, toggle: () => setUserPaused((value) => !value) }}>
+    <MotionContext.Provider value={{ paused, systemPaused, toggle: () => setUserPaused((value) => !(value ?? reduced)) }}>
       <div className={`site-shell${paused ? ' motion-paused' : ''}`}>{children}</div>
     </MotionContext.Provider>
   )

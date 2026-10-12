@@ -1,6 +1,7 @@
 import { Link } from 'react-router-dom'
 import NewsItem from '../components/NewsItem'
 import ParticleField from '../components/ParticleField'
+import { useMotion } from '../components/Motion'
 import ProjectCard from '../components/ProjectCard'
 import RecruitStatus from '../components/RecruitStatus'
 import Section from '../components/Section'
@@ -13,6 +14,7 @@ import { usePageTitle } from '../lib/usePageTitle'
 
 export default function Home() {
   usePageTitle()
+  const { paused, systemPaused, toggle } = useMotion()
   const shownProjects = [...projects]
     .sort((a, b) => Number(!!b.featured) - Number(!!a.featured))
     .slice(0, 3)
@@ -38,7 +40,12 @@ export default function Home() {
             <div className="flight-scene__cross flight-scene__cross--one" aria-hidden="true">+</div>
             <div className="flight-scene__cross flight-scene__cross--two" aria-hidden="true">+</div>
             <div className="flight-scene__axis" aria-hidden="true"><span>Z</span><span>X</span></div>
-            <figcaption><span className="flight-scene__dot" /> 마우스를 움직여 궤도를 깨워보세요</figcaption>
+            <figcaption>
+              {paused ? <>
+                <span>{systemPaused ? '기기 설정에 따라 움직임을 줄였어요' : '애니메이션이 일시 정지되어 있어요'}</span>
+                <button className="flight-scene__play" type="button" onClick={toggle}>로켓 애니메이션 재생 <span aria-hidden="true">▶</span></button>
+              </> : <><span className="flight-scene__dot" /> 마우스를 움직여 궤도를 깨워보세요</>}
+            </figcaption>
             <span className="flight-scene__note mono">CONCEPT VISUALIZATION</span>
           </figure>
         </div>
