@@ -40,6 +40,9 @@ jobs:
         env:
           SITE_BASE_PATH: /${{ github.event.repository.name }}/
           NOTION_TOKEN: ${{ secrets.NOTION_TOKEN }}
+      - name: Require successful Notion sync for branch validation
+        if: github.ref != 'refs/heads/main' && steps.build.outputs.notion_state != 'ready'
+        run: exit 1
       - name: Configure Pages
         uses: actions/configure-pages@983d7736d9b0ae728b81ab479565c72886d7745b # v5
       - name: Upload site
@@ -48,6 +51,7 @@ jobs:
           path: dist
 
   deploy:
+    if: github.ref == 'refs/heads/main'
     needs: build
     runs-on: ubuntu-latest
     permissions:
