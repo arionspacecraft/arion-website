@@ -48,7 +48,7 @@ src/
 
 ## GitHub Pages 배포
 
-공개 사이트: https://jeromejungwj.github.io/arion-website/
+공개 사이트: https://arionspacecraft.github.io/arion-website/
 
 `main` 브랜치에 push하면 `.github/workflows/deploy.yml`이 자동 빌드·배포합니다.
 저장소 Settings → Pages의 Source는 GitHub Actions로 설정합니다. Node.js 24를 사용합니다.
