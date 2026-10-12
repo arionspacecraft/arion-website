@@ -1,7 +1,7 @@
 export const home = {
   hero: {
-    first: '상상을 넘어,',
-    second: '궤도 밖으로.',
+    first: '우주를 향한',
+    second: '도전',
     label: 'DGIST ROCKET CLUB',
     note: '우리의 손으로, 다음 가능성을 쏘아 올립니다.',
   },
@@ -15,7 +15,7 @@ export const home = {
     description: '아이디어가 실제 비행이 되기까지, 우리의 도전은 계속됩니다.',
   },
   teams: {
-    title: '네 개의 전문성,',
+    title: '다섯 팀의 전문성,',
     accent: '하나의 비행.',
     description: '서로 다른 전문성이 모여, 하나의 로켓을 완성합니다.',
   },
