@@ -1,0 +1,17 @@
+{
+  "databaseId": "06233ac2-9c84-44b0-941b-fa88668a476e",
+  "properties": {
+    "title": "프로젝트명",
+    "tags": "공개 태그",
+    "status": "상태",
+    "summary": "설명",
+    "date": "발사 예정일"
+  },
+  "confidentialTag": "대외비",
+  "statusMap": {
+    "기획 중": "계획",
+    "진행 중": "진행 중",
+    "완료": "완료",
+    "아카이브": "아카이브"
+  }
+}

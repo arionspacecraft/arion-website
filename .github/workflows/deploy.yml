@@ -4,6 +4,8 @@ on:
   push:
     branches: [main]
   workflow_dispatch:
+  schedule:
+    - cron: '7,22,37,52 * * * *'
 
 permissions:
   contents: read
@@ -15,6 +17,8 @@ concurrency:
 jobs:
   build:
     runs-on: ubuntu-latest
+    outputs:
+      notion_state: ${{ steps.build.outputs.notion_state }}
     permissions:
       contents: read
       pages: read
@@ -28,12 +32,14 @@ jobs:
           cache: npm
       - name: Install dependencies
         run: npm ci
-      - name: Test motion preferences
+      - name: Test motion preferences and publication filter
         run: npm test
       - name: Build and prepare route entry pages
+        id: build
         run: npm run build
         env:
           SITE_BASE_PATH: /${{ github.event.repository.name }}/
+          NOTION_TOKEN: ${{ secrets.NOTION_TOKEN }}
       - name: Configure Pages
         uses: actions/configure-pages@983d7736d9b0ae728b81ab479565c72886d7745b # v5
       - name: Upload site
@@ -54,3 +60,8 @@ jobs:
       - name: Deploy
         id: deployment
         uses: actions/deploy-pages@d6db90164ac5ed86f2b6aed7e0febac5b3c0c03e # v4
+      - name: Report unavailable project sync after safe deployment
+        if: needs.build.outputs.notion_state != 'ready'
+        run: |
+          echo "::error::Notion sync failed. An empty project list was deployed; check the integration and NOTION_TOKEN."
+          exit 1

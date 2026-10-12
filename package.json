@@ -4,7 +4,10 @@
   "version": "0.0.0",
   "type": "module",
   "scripts": {
+    "sync:notion": "node --env-file-if-exists=.env.local scripts/sync-notion-projects.mjs",
+    "predev": "npm run sync:notion",
     "dev": "vite",
+    "prebuild": "npm run sync:notion",
     "build": "tsc -b && vite build && node scripts/create-route-pages.mjs",
     "lint": "oxlint",
     "preview": "vite preview",

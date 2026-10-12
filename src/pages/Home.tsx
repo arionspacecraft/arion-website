@@ -7,7 +7,7 @@ import RecruitStatus from '../components/RecruitStatus'
 import Section from '../components/Section'
 import { home } from '../content/home'
 import { sortedNews } from '../content/news'
-import { projects } from '../content/projects'
+import { projects, projectsAvailable, projectsEmptyMessage } from '../content/projects'
 import { site } from '../content/site'
 import { teams } from '../content/teams'
 import { usePageTitle } from '../lib/usePageTitle'
@@ -67,7 +67,7 @@ export default function Home() {
         </div>
         <dl className="stats">
           <div><dt>THE BEGINNING <span>창립</span></dt><dd>{site.founded}<span>년</span></dd></div>
-          <div><dt>PROJECTS <span>프로젝트</span></dt><dd>{String(projects.length).padStart(2, '0')}<span>개의 도전</span></dd></div>
+          <div><dt>PROJECTS <span>공개 프로젝트</span></dt><dd>{projectsAvailable ? String(projects.length).padStart(2, '0') : '—'}<span>개의 도전</span></dd></div>
           <div><dt>TEAMS <span>함께하는 팀</span></dt><dd>{String(teams.length).padStart(2, '0')}<span>개의 전문 분야</span></dd></div>
           <div className="stats__motto"><dt>OUR DESTINATION</dt><dd>SPACE<span>더 먼 곳을 향해</span></dd></div>
         </dl>
@@ -75,7 +75,9 @@ export default function Home() {
 
       <Section eyebrow="ENGINEERING IN PROGRESS" title={home.projects.title} action={<Link className="text-link" to="/projects">모든 프로젝트 <span aria-hidden="true">↗</span></Link>} className="home-projects">
         <p className="section__description">{home.projects.description}</p>
-        <div className="grid grid--3">{shownProjects.map((project) => <ProjectCard key={project.slug} project={project} />)}</div>
+        {shownProjects.length > 0
+          ? <div className="grid grid--3">{shownProjects.map((project) => <ProjectCard key={project.slug} project={project} />)}</div>
+          : <p className="empty">{projectsEmptyMessage}</p>}
       </Section>
 
       <Section eyebrow="THE TEAM BEHIND THE ROCKET" className="home-teams">
