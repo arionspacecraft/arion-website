@@ -1,0 +1,12 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64">
+  <title>ARION rocket</title>
+  <rect width="64" height="64" rx="13" fill="#030627"/>
+  <!-- The silhouette and tilt match the rocket in ParticleField. -->
+  <g transform="translate(32 32) rotate(22.9183) scale(.12) translate(-180 -260)">
+    <path d="M153 137C153 103 166 63 180 38C194 63 207 103 207 137V352H153Z" fill="#e5efff"/>
+    <path d="M153 278L109 357V389L153 348ZM207 278L251 357V389L207 348Z" fill="#a9c6ff"/>
+    <path d="M153 137H207V142H153ZM153 259H207V263H153ZM169 177H191V208H169Z" fill="#030627"/>
+    <path d="M162 357H198V372H162Z" fill="#e5efff"/>
+    <path d="M165 380Q161 432 180 479Q199 432 195 380Z" fill="#739cff"/>
+  </g>
+</svg>
