@@ -2,6 +2,8 @@
 .home-journey { --journey-inset: 85px; position: relative; isolation: isolate; }
 .journey__viewport { position: fixed; inset: var(--journey-inset) 0 0; overflow: hidden; z-index: -1; pointer-events: none; background: #030627; }
 .journey__canvas { width: 100%; height: 100%; display: block; }
+/* Transparent breathing room between content panels, never a pinned section. */
+.journey__window { height: calc((100svh - var(--journey-inset)) * .78); }
 .journey { min-height: calc(100svh - var(--journey-inset)); position: relative; display: flex; align-items: center; padding: 100px 7% 110px; }
 .journey__topline { position: absolute; top: 30px; left: 7%; right: 7%; display: flex; justify-content: space-between; gap: 20px; color: #a6b9da; }
 .journey__topline .mono { font-size: 12px; letter-spacing: .12em; }
@@ -42,11 +44,13 @@
 .home-journey .join-banner { padding-bottom: 125px; }
 .site-shell:has(.home-journey) .footer { position: relative; z-index: 1; }
 @media (max-width: 1000px) {
-  .home-journey { --journey-inset: 73px; }
   .journey { padding-left: 5%; padding-right: 5%; }
   .journey__intro { width: 55%; }
   .journey__description { font-size: 14px; }
   .journey__topline { left: 5%; right: 5%; }
+}
+@media (max-width: 800px) {
+  .home-journey { --journey-inset: 73px; }
 }
 @media (max-width: 700px) {
   .journey { align-items: flex-start; padding: 90px 7% 90px; }

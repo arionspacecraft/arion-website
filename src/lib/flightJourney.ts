@@ -29,6 +29,24 @@ export function scrollProgress(top: number, sectionHeight: number, viewportHeigh
   return distance > 0 ? clamp((inset - top) / distance) : 0
 }
 
+export type FlightStop = { scroll: number; position: number; hold: number }
+
+// Finish the zoom before the clear gap is centred, then keep its full scene
+// visible while the gap passes. Orbit, spin and rocket motion keep running.
+export function anchoredProgress(scroll: number, stops: readonly FlightStop[]) {
+  if (!stops.length) return 0
+  for (let i = 1; i < stops.length; i++) {
+    const previous = stops[i - 1]
+    const next = stops[i]
+    const distance = Math.max(0, next.scroll - previous.scroll)
+    const start = previous.scroll + Math.min(previous.hold, distance * 0.35)
+    const end = next.scroll - Math.min(next.hold, distance * 0.35)
+    if (scroll < start) return previous.position
+    if (scroll < end) return mix(previous.position, next.position, ease(start, end, scroll))
+  }
+  return stops[stops.length - 1].position
+}
+
 // Visual time is compressed separately for orbit and spin, not an ephemeris.
 // Periods determine ordering; distances and radii are composed for readability.
 export const planets = [
@@ -87,13 +105,13 @@ export function flightLayout(progress: number, time: number) {
   return { earth, solar, galaxy, local, cosmic, earthRadius, solarRadius, galaxyRadius, localRadius, cosmicRadius }
 }
 
-export const PARTICLE_REACTION = { radius: 120, displacement: 175 } as const
+export const PARTICLE_REACTION = { radius: 60, displacement: 87.5 } as const
 export function particleForce(x: number, y: number, pointer: Vector, width: number, phase: number): Vector {
   const dx = x - pointer.x; const dy = y - pointer.y
   const distance = Math.hypot(dx, dy)
-  const radius = Math.min(PARTICLE_REACTION.radius, width * 0.23)
+  const radius = Math.min(PARTICLE_REACTION.radius, width * 0.115)
   if (distance >= radius) return { x: 0, y: 0 }
-  const force = Math.pow(1 - distance / radius, 0.7) * Math.min(PARTICLE_REACTION.displacement, width * 0.3)
+  const force = Math.pow(1 - distance / radius, 0.7) * Math.min(PARTICLE_REACTION.displacement, width * 0.15)
   const angle = distance > 0.1 ? Math.atan2(dy, dx) : phase
   return { x: Math.cos(angle) * force, y: Math.sin(angle) * force }
 }

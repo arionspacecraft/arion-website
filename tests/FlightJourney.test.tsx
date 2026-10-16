@@ -6,7 +6,7 @@ import { MemoryRouter } from 'react-router-dom'
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import FlightJourney from '../src/components/FlightJourney'
 import { MotionProvider } from '../src/components/Motion'
-import { flightLayout, flightStages, orbitalPoint, orbitAngle, particleForce, planets, scrollProgress, spinAngle, stageAt } from '../src/lib/flightJourney'
+import { anchoredProgress, flightLayout, flightStages, orbitalPoint, orbitAngle, particleForce, planets, scrollProgress, spinAngle, stageAt } from '../src/lib/flightJourney'
 
 const renderer = vi.hoisted(() => ({ draw: vi.fn(), resize: vi.fn() }))
 vi.mock('../src/components/particleUniverse', () => ({ createFlightRenderer: () => renderer }))
@@ -17,6 +17,7 @@ let frames: Map<number, FrameRequestCallback>
 let nextFrame: number
 let reduced: boolean
 let observed: Element[]
+let resized: () => void
 
 beforeEach(() => {
   reduced = false
@@ -26,7 +27,7 @@ beforeEach(() => {
   vi.stubGlobal('IS_REACT_ACT_ENVIRONMENT', true)
   vi.stubGlobal('requestAnimationFrame', (callback: FrameRequestCallback) => { frames.set(++nextFrame, callback); return nextFrame })
   vi.stubGlobal('cancelAnimationFrame', (id: number) => frames.delete(id))
-  vi.stubGlobal('ResizeObserver', class { observe() {} disconnect() {} })
+  vi.stubGlobal('ResizeObserver', class { constructor(callback: () => void) { resized = callback } observe() {} disconnect() {} })
   vi.stubGlobal('IntersectionObserver', class { observe(element: Element) { observed.push(element) } disconnect() {} })
   vi.stubGlobal('matchMedia', () => ({ matches: reduced, addEventListener() {}, removeEventListener() {} }))
   vi.spyOn(HTMLCanvasElement.prototype, 'getContext').mockReturnValue({} as CanvasRenderingContext2D)
@@ -42,8 +43,8 @@ afterEach(() => {
   vi.restoreAllMocks()
   vi.unstubAllGlobals()
 })
-function mount() {
-  act(() => root.render(<MemoryRouter><MotionProvider><div className="home-journey"><FlightJourney /><section className="test-content">Homepage content</section></div></MotionProvider></MemoryRouter>))
+function mount(withGaps = false) {
+  act(() => root.render(<MemoryRouter><MotionProvider><div className="home-journey"><FlightJourney /><section className="test-content">Homepage content</section>{withGaps && flightStages.slice(1).map(stage => <div className="journey__window" data-flight-stop={stage.id} key={stage.id} />)}</div></MotionProvider></MemoryRouter>))
   const page = container.querySelector<HTMLElement>('.home-journey')!
   const viewport = container.querySelector<HTMLElement>('.journey__viewport')!
   viewport.style.top = '85px'
@@ -160,13 +161,15 @@ describe('scroll flight behavior', () => {
     }
   })
 
-  it('halves the interaction radius at desktop and mobile sizes without changing peak displacement', () => {
+  it('halves both the activation radius and visible scattering distance on desktop and mobile', () => {
     const pointer = { x: 400, y: 300 }
-    expect(particleForce(450, 300, pointer, 1440, 0).x).toBeGreaterThan(100)
-    expect(particleForce(520, 300, pointer, 1440, 0)).toEqual({ x: 0, y: 0 })
-    expect(particleForce(500, 300, pointer, 1440, 0).x).toBeGreaterThan(0)
-    expect(particleForce(500, 300, pointer, 390, 0)).toEqual({ x: 0, y: 0 })
-    expect(particleForce(400, 300, pointer, 1440, 0).x).toBe(175)
+    expect(particleForce(425, 300, pointer, 1440, 0).x).toBeGreaterThan(50)
+    expect(particleForce(460, 300, pointer, 1440, 0)).toEqual({ x: 0, y: 0 })
+    expect(particleForce(450, 300, pointer, 1440, 0).x).toBeGreaterThan(0)
+    expect(particleForce(450, 300, pointer, 390, 0)).toEqual({ x: 0, y: 0 })
+    expect(particleForce(440, 300, pointer, 390, 0).x).toBeGreaterThan(0)
+    expect(particleForce(400, 300, pointer, 1440, 0).x).toBe(87.5)
+    expect(particleForce(400, 300, pointer, 390, 0).x).toBe(58.5)
     expect(particleForce(400, 300, pointer, 1440, 1).x).toBeTypeOf('number')
     expect(Number.isFinite(particleForce(400, 300, pointer, 1440, 1).y)).toBe(true)
   })
@@ -177,7 +180,8 @@ describe('scroll flight behavior', () => {
     expect(observed).not.toContain(container.querySelector('.journey'))
     vi.spyOn(page, 'getBoundingClientRect').mockReturnValue({ top: 85 - 2100, bottom: 2985 } as DOMRect)
     step()
-    expect(renderer.draw.mock.lastCall?.[0]).toBe(0.5)
+    expect(renderer.draw.mock.lastCall?.[0]).toBeGreaterThan(0.48)
+    expect(renderer.draw.mock.lastCall?.[0]).toBeLessThan(0.5)
     expect(frames.size).toBe(1)
     // Content becoming longer changes progress without adding a flight runway.
     Object.defineProperty(page, 'offsetHeight', { value: 9200 })
@@ -199,5 +203,48 @@ describe('scroll flight behavior', () => {
     act(() => button.dispatchEvent(new MouseEvent('pointermove', { bubbles: true, clientX: 400, clientY: 600 })))
     step(200)
     expect(renderer.draw.mock.lastCall?.[2]).toEqual({ x: -10000, y: -10000 })
+  })
+
+  it('completes each zoom before its gap is centred and holds the full scene in either scroll direction', () => {
+    const stops = flightStages.map((stage, index) => ({ scroll: index * 1000, position: stage.position, hold: index ? 160 : 0 }))
+    expect(anchoredProgress(-100, stops)).toBe(0)
+    expect(anchoredProgress(9000, stops)).toBe(1)
+    for (const stop of stops.slice(1)) {
+      for (const offset of [-160, -80, 0, 80, 160, 0, -160]) {
+        expect(anchoredProgress(stop.scroll + offset, stops)).toBe(stop.position)
+      }
+    }
+    let previous = 0
+    for (let scroll = 0; scroll <= 5000; scroll += 10) {
+      const progress = anchoredProgress(scroll, stops)
+      expect(progress).toBeGreaterThanOrEqual(previous)
+      expect(progress - previous).toBeLessThan(0.01)
+      previous = progress
+    }
+  })
+
+  it('anchors both the renderer and stage navigation to actual gaps after content reflows', () => {
+    const page = mount(true)
+    let scroll = 576 // Earth gap centre is 696; it must already be complete here.
+    const tops = [800, 2100, 3400, 5000, 6500]
+    Object.defineProperty(page, 'offsetHeight', { value: 8000, configurable: true })
+    vi.spyOn(page, 'getBoundingClientRect').mockImplementation(() => ({ top: 85 - scroll, bottom: 8085 - scroll } as DOMRect))
+    container.querySelectorAll('.journey__window').forEach((gap, index) => {
+      vi.spyOn(gap, 'getBoundingClientRect').mockImplementation(() => ({ top: 85 - scroll + tops[index], height: 624 } as DOMRect))
+    })
+    step()
+    expect(renderer.draw.mock.lastCall?.[0]).toBe(0.22)
+    const buttons = container.querySelectorAll<HTMLButtonElement>('.journey__stages button')
+    act(() => buttons[5].click())
+    expect(window.scrollTo).toHaveBeenLastCalledWith({ top: 6396 - scroll, behavior: 'smooth' })
+    // A longer project panel shifts all later gaps, regardless of total-page ratios.
+    tops[2] += 500
+    scroll = 3796
+    act(() => resized())
+    for (let frame = 1; frame <= 20; frame++) step(100 + frame * 100)
+    expect(renderer.draw.mock.lastCall?.[0]).toBe(0.65)
+    expect(container.querySelector('.journey__viewport')?.getAttribute('data-stage')).toBe('galaxy')
+    act(() => buttons[3].click())
+    expect(window.scrollTo).toHaveBeenLastCalledWith({ top: 0, behavior: 'smooth' })
   })
 })

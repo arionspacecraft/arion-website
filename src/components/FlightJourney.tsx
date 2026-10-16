@@ -2,9 +2,26 @@ import { useEffect, useLayoutEffect, useRef, useState } from 'react'
 import { Link } from 'react-router-dom'
 import { home } from '../content/home'
 import { site } from '../content/site'
-import { flightStages, mix, scrollProgress, stageAt } from '../lib/flightJourney'
+import { anchoredProgress, flightStages, mix, stageAt } from '../lib/flightJourney'
+import type { FlightStop } from '../lib/flightJourney'
 import { createFlightRenderer } from './particleUniverse'
 import { useMotion } from './Motion'
+
+function measureStops(page: HTMLElement, viewport: HTMLElement): FlightStop[] {
+  const pageTop = page.getBoundingClientRect().top
+  const height = viewport.offsetHeight
+  const distance = Math.max(0, page.offsetHeight - height)
+  return flightStages.map(stage => {
+    const gap = page.querySelector<HTMLElement>(`[data-flight-stop="${stage.id}"]`)
+    if (!gap) return { scroll: stage.position * distance, position: stage.position, hold: 0 }
+    const rect = gap.getBoundingClientRect()
+    return {
+      scroll: Math.max(0, rect.top - pageTop + rect.height / 2 - height * 0.52),
+      position: stage.position,
+      hold: Math.min(height * 0.2, rect.height * 0.28),
+    }
+  })
+}
 
 export default function FlightJourney() {
   const sectionRef = useRef<HTMLElement>(null)
@@ -35,13 +52,15 @@ export default function FlightJourney() {
     let dirty = true
     let disposed = false
     let lastStage = -1
+    let stops: FlightStop[] = []
     const pointer = { x: -10000, y: -10000 }
 
     const readScroll = (delta: number) => {
       const inset = Number.parseFloat(getComputedStyle(viewport).top) || 0
       const rect = page.getBoundingClientRect()
-      // The real homepage is the timeline. The hero adds no pinned scroll runway.
-      const target = scrollProgress(rect.top, page.offsetHeight, viewport.offsetHeight, inset)
+      // Cache gap measurements between scroll/resize events.
+      if (dirty) stops = measureStops(page, viewport)
+      const target = anchoredProgress(inset - rect.top, stops)
       progress = motionRef.current || firstFrame ? target : mix(progress, target, 1 - Math.exp(-delta * 9))
       if (Math.abs(progress - target) < 0.0001) progress = target
       firstFrame = false
@@ -83,6 +102,7 @@ export default function FlightJourney() {
     const resizeObserver = new ResizeObserver(resize)
     resizeObserver.observe(viewport)
     resizeObserver.observe(page)
+    page.querySelectorAll('.section, .journey__window, .journey').forEach(element => resizeObserver.observe(element))
     const intersection = new IntersectionObserver(([entry]) => {
       visible = entry.isIntersecting
       if (visible) schedule()
@@ -120,7 +140,7 @@ export default function FlightJourney() {
     const viewport = viewportRef.current!
     const inset = Number.parseFloat(getComputedStyle(viewport).top) || 0
     const top = window.scrollY + page.getBoundingClientRect().top - inset
-    window.scrollTo({ top: top + flightStages[index].position * (page.offsetHeight - viewport.offsetHeight), behavior: paused ? 'instant' : 'smooth' })
+    window.scrollTo({ top: top + measureStops(page, viewport)[index].scroll, behavior: paused ? 'instant' : 'smooth' })
     const atlas = statusRef.current?.querySelector('details')
     if (atlas) {
       atlas.open = false

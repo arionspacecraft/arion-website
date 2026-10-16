@@ -21,6 +21,8 @@ export default function Home() {
     <div className="home-journey">
       <FlightJourney />
 
+      <div className="journey__window" data-flight-stop="earth" aria-hidden="true" />
+
       <Section id="mission" eyebrow="OUR MISSION" className="mission">
         <div className="mission__layout">
           <div><p className="eyebrow">WHY WE BUILD</p><div className="mission__orbit" aria-hidden="true"><span /></div></div>
@@ -37,12 +39,16 @@ export default function Home() {
         </dl>
       </Section>
 
+      <div className="journey__window" data-flight-stop="solar" aria-hidden="true" />
+
       <Section eyebrow="ENGINEERING IN PROGRESS" title={home.projects.title} action={<Link className="text-link" to="/projects">모든 프로젝트 <span aria-hidden="true">↗</span></Link>} className="home-projects">
         <p className="section__description">{home.projects.description}</p>
         {shownProjects.length > 0
           ? <div className="grid grid--3">{shownProjects.map((project) => <ProjectCard key={project.slug} project={project} />)}</div>
           : <p className="empty">{projectsEmptyMessage}</p>}
       </Section>
+
+      <div className="journey__window" data-flight-stop="galaxy" aria-hidden="true" />
 
       <Section eyebrow="THE TEAM BEHIND THE ROCKET" className="home-teams">
         <div className="team-intro">
@@ -61,9 +67,13 @@ export default function Home() {
         </div>
       </Section>
 
+      <div className="journey__window" data-flight-stop="local" aria-hidden="true" />
+
       <Section eyebrow="ARION LOGBOOK" title="도전의 기록" action={<Link className="text-link" to="/news">모든 소식 <span aria-hidden="true">↗</span></Link>}>
         <ul className="news-list">{sortedNews.slice(0, 3).map((post) => <NewsItem key={post.slug} post={post} />)}</ul>
       </Section>
+
+      <div className="journey__window" data-flight-stop="cosmic" aria-hidden="true" />
 
       <section className="join-banner">
         <div className="container join-banner__inner reveal">
