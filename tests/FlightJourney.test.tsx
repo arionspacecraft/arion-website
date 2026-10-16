@@ -161,15 +161,15 @@ describe('scroll flight behavior', () => {
     }
   })
 
-  it('scales the interaction footprint by 1.75 on desktop and mobile', () => {
+  it('scales the interaction footprint by 1.2 on desktop and mobile', () => {
     const pointer = { x: 400, y: 300 }
-    expect(particleForce(443.75, 300, pointer, 1440, 0).x).toBeGreaterThan(87.5)
-    expect(particleForce(505, 300, pointer, 1440, 0)).toEqual({ x: 0, y: 0 })
-    expect(particleForce(487.5, 300, pointer, 1440, 0).x).toBeGreaterThan(0)
-    expect(particleForce(487.5, 300, pointer, 390, 0)).toEqual({ x: 0, y: 0 })
-    expect(particleForce(470, 300, pointer, 390, 0).x).toBeGreaterThan(0)
-    expect(particleForce(400, 300, pointer, 1440, 0).x).toBe(87.5 * 1.75)
-    expect(particleForce(400, 300, pointer, 390, 0).x).toBeCloseTo(58.5 * 1.75)
+    expect(particleForce(452.5, 300, pointer, 1440, 0).x).toBeGreaterThan(105)
+    expect(particleForce(526, 300, pointer, 1440, 0)).toEqual({ x: 0, y: 0 })
+    expect(particleForce(505, 300, pointer, 1440, 0).x).toBeGreaterThan(0)
+    expect(particleForce(505, 300, pointer, 390, 0)).toEqual({ x: 0, y: 0 })
+    expect(particleForce(484, 300, pointer, 390, 0).x).toBeGreaterThan(0)
+    expect(particleForce(400, 300, pointer, 1440, 0).x).toBe(153.125 * 1.2)
+    expect(particleForce(400, 300, pointer, 390, 0).x).toBeCloseTo(102.375 * 1.2)
     expect(particleForce(400, 300, pointer, 1440, 1).x).toBeTypeOf('number')
     expect(Number.isFinite(particleForce(400, 300, pointer, 1440, 1).y)).toBe(true)
   })

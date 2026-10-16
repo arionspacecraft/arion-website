@@ -105,13 +105,13 @@ export function flightLayout(progress: number, time: number) {
   return { earth, solar, galaxy, local, cosmic, earthRadius, solarRadius, galaxyRadius, localRadius, cosmicRadius }
 }
 
-export const PARTICLE_REACTION = { radius: 105, displacement: 153.125 } as const
+export const PARTICLE_REACTION = { radius: 126, displacement: 183.75 } as const
 export function particleForce(x: number, y: number, pointer: Vector, width: number, phase: number): Vector {
   const dx = x - pointer.x; const dy = y - pointer.y
   const distance = Math.hypot(dx, dy)
-  const radius = Math.min(PARTICLE_REACTION.radius, width * 0.20125)
+  const radius = Math.min(PARTICLE_REACTION.radius, width * 0.2415)
   if (distance >= radius) return { x: 0, y: 0 }
-  const force = Math.pow(1 - distance / radius, 0.7) * Math.min(PARTICLE_REACTION.displacement, width * 0.2625)
+  const force = Math.pow(1 - distance / radius, 0.7) * Math.min(PARTICLE_REACTION.displacement, width * 0.315)
   const angle = distance > 0.1 ? Math.atan2(dy, dx) : phase
   return { x: Math.cos(angle) * force, y: Math.sin(angle) * force }
 }

@@ -1,5 +1,6 @@
 import { clamp, deepSky, ease, flightLayout, mix, moonAngle, orbitalPoint, orbitAngle, particleForce, planets, seededRandom, spinAngle, TAU } from '../lib/flightJourney'
 import type { Vector } from '../lib/flightJourney'
+import { mobileAtlasCaptions, mobileAtlasFrame } from '../lib/mobileAtlas'
 
 type Label = { name: string; catalog: string; x: number; y: number; radius: number; alpha: number; priority: number }
 type Box = { x: number; y: number; width: number; height: number }
@@ -163,10 +164,37 @@ export function createFlightRenderer(canvas: HTMLCanvasElement, ctx: CanvasRende
       const py = (135 + travel * length) * scale
       dot(`exhaust:${i}`, x + px * cos - py * sin, y + px * sin + py * cos, p.size * (0.6 + scale * 0.4), '#9ecaff', (1 - travel) * 0.85)
     }
-    if (departure > 0.8) annotation('ARION', 'FLIGHT IN PROGRESS', { x, y: y - 160 * scale }, 3, 0.85, 0)
+    if (departure > 0.8 && !mobile) annotation('ARION', 'FLIGHT IN PROGRESS', { x, y: y - 160 * scale }, 3, 0.85, 0)
+  }
+
+  function drawMobileLabels() {
+    const frame = mobileAtlasFrame(width, height)
+    const items = labels.sort((a, b) => a.priority - b.priority)
+    ctx.font = `500 ${frame.font}px Consolas, monospace`
+    const captions = mobileAtlasCaptions(items.map(item => item.name), frame.captions, frame.font, text => ctx.measureText(text).width)
+    // Draw every leader first; opaque caption backs keep lines and particles
+    // out of the names, including long names which wrap instead of shrinking.
+    items.forEach((item, index) => {
+      const box = captions[index].box
+      const endX = clamp(item.x, box.x, box.x + box.width)
+      const endY = box.y + box.height / 2
+      const angle = Math.atan2(endY - item.y, endX - item.x)
+      ctx.globalAlpha = item.alpha * 0.55
+      ctx.strokeStyle = '#8fafd0'; ctx.lineWidth = 0.5; ctx.beginPath()
+      ctx.moveTo(item.x + Math.cos(angle) * item.radius, item.y + Math.sin(angle) * item.radius)
+      ctx.lineTo(endX, endY); ctx.stroke()
+    })
+    items.forEach((item, index) => {
+      const { box, text, lines, lineHeight } = captions[index]
+      ctx.globalAlpha = item.alpha
+      ctx.fillStyle = '#050a18'; ctx.fillRect(box.x, box.y, box.width, box.height)
+      ctx.fillStyle = '#dbeaff'; ctx.font = `500 ${frame.font}px Consolas, monospace`
+      lines.forEach((line, row) => ctx.fillText(line, text.x, text.y + row * lineHeight))
+    })
   }
 
   function drawLabels() {
+    if (mobile) { drawMobileLabels(); return }
     const occupied: Box[] = []
     const minX = mobile ? 16 : width * 0.29
     const minY = 40
@@ -214,9 +242,13 @@ export function createFlightRenderer(canvas: HTMLCanvasElement, ctx: CanvasRende
     draw(progress: number, time: number, mouse: Vector, frozen: boolean) {
       pointer = mouse; paused = frozen; step = clamp((time - lastTime) * 30, 0.5, 3); lastTime = time; labels = []
       ctx.globalAlpha = 1; ctx.clearRect(0, 0, width, height)
-      // Use the full background instead of squeezing the atlas between chapters.
-      const centre = { x: width * (mobile ? 0.52 : 0.61), y: height * (mobile ? 0.57 : 0.52) }
-      const unit = mobile ? Math.min(width * 0.58, height * 0.54) : Math.min(width * 0.35, height * 0.64)
+      // Fit mobile systems and captions without changing desktop composition.
+      const mobileFrame = mobileAtlasFrame(width, height)
+      const fit = ease(0.04, 0.20, progress)
+      const centre = mobile
+        ? { x: mix(width * 0.52, mobileFrame.centre.x, fit), y: mix(height * 0.57, mobileFrame.centre.y, fit) }
+        : { x: width * 0.61, y: height * 0.52 }
+      const unit = mobile ? mix(Math.min(width * 0.58, height * 0.54), mobileFrame.unit, fit) : Math.min(width * 0.35, height * 0.64)
       const background = ctx.createRadialGradient(centre.x, centre.y, 0, centre.x, centre.y, width * 0.8)
       background.addColorStop(0, '#030627'); background.addColorStop(0.65, '#050916'); background.addColorStop(1, '#06080e')
       ctx.fillStyle = background; ctx.fillRect(0, 0, width, height)
@@ -230,22 +262,23 @@ export function createFlightRenderer(canvas: HTMLCanvasElement, ctx: CanvasRende
       const earth = screen(layout.earth); const solar = screen(layout.solar); const milky = screen(layout.galaxy); const local = screen(layout.local); const cosmic = screen(layout.cosmic)
       const er = layout.earthRadius * unit; const sr = layout.solarRadius * unit; const gr = layout.galaxyRadius * unit; const lr = layout.localRadius * unit; const cr = layout.cosmicRadius * unit
 
-      // Draw large-scale structures first; culling is spatial, not a scene fade.
-      if (cr < width * 7) {
+      // Start mobile neighbouring structures with their zoom so distant fragments
+      // cannot intrude into the caption area of a completed smaller-scale view.
+      if ((!mobile || progress > 0.85) && cr < width * 7) {
         for (let i = 0; i < web.length; i += mobile ? 2 : 1) dot(`web:${i}`, cosmic.x + web[i].x * cr, cosmic.y + web[i].y * cr, web[i].size, '#9eaef0', 0.55)
         for (let i = 0; i < nodes.length; i++) cluster(`cluster:${i}`, { x: cosmic.x + nodes[i].x * cr, y: cosmic.y + nodes[i].y * cr }, cr * 0.09, '#bac4ed')
         const amount = ease(0.88, 0.97, progress)
         for (const item of deepSky.cosmic) annotation(item.name, item.catalog, { x: cosmic.x + item.x * cr, y: cosmic.y + item.y * cr }, cr * 0.04, amount, 3)
         annotation('LOCAL GROUP', 'OUR GALACTIC NEIGHBOURHOOD', local, 4, amount, 2)
       }
-      if (lr < width * 8) {
+      if ((!mobile || progress > 0.68) && lr < width * 8) {
         for (const item of deepSky.local) {
           const p = { x: local.x + item.x * lr, y: local.y + item.y * lr }
           galaxy(item.name, p, item.radius * lr, time, item.tilt, item.catalog.startsWith('LMC'))
           annotation(item.name, item.catalog, p, item.radius * lr * 0.5, ease(0.73, 0.81, progress) * (1 - ease(0.87, 0.95, progress)), 3)
         }
       }
-      galaxy('milky-way', milky, gr, time)
+      if (!mobile || progress > 0.46) galaxy('milky-way', milky, gr, time)
       const galacticLabels = ease(0.58, 0.64, progress) * (1 - ease(0.69, 0.78, progress))
       const sunMark = { x: solar.x, y: solar.y }
       annotation('SOLAR SYSTEM', 'ORION SPUR · YOU ARE HERE', sunMark, 3, galacticLabels, 1)
@@ -296,7 +329,7 @@ export function createFlightRenderer(canvas: HTMLCanvasElement, ctx: CanvasRende
     },
     resize() {
       width = Math.max(1, canvas.clientWidth); height = Math.max(1, canvas.clientHeight)
-      mobile = width <= 700 && !window.matchMedia('(max-width: 700px) and (max-height: 570px) and (orientation: landscape)').matches
+      mobile = width <= 700 || (width <= 950 && height <= 500)
       const dpr = Math.min(window.devicePixelRatio || 1, mobile ? 1.5 : 2)
       canvas.width = Math.round(width * dpr); canvas.height = Math.round(height * dpr)
       ctx.setTransform(dpr, 0, 0, dpr, 0, 0)
