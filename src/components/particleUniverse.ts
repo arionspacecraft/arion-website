@@ -2,6 +2,7 @@ import { clamp, deepSky, ease, flightLayout, mix, moonAngle, orbitalPoint, orbit
 import type { Vector } from '../lib/flightJourney'
 import { mobileAtlasCaptions, mobileAtlasFrame } from '../lib/mobileAtlas'
 import { celestialDistances } from '../content/celestialDistances'
+import { solarCaptionFrame, solarCaptionNames } from '../lib/solarAtlas'
 
 type Label = { name: string; catalog: string; x: number; y: number; radius: number; alpha: number; priority: number }
 type Box = { x: number; y: number; width: number; height: number }
@@ -30,6 +31,7 @@ export function createFlightRenderer(canvas: HTMLCanvasElement, ctx: CanvasRende
   let lastTime = 0
   let step = 1
   let labels: Label[] = []
+  let solarLabelsActive = false
   const offsets = new Map<string, Displacement>()
   const random = seededRandom(20261018)
   const stars = Array.from({ length: 180 }, () => ({ x: random(), y: random(), z: random(), phase: random() * TAU }))
@@ -89,7 +91,9 @@ export function createFlightRenderer(canvas: HTMLCanvasElement, ctx: CanvasRende
     ctx.globalAlpha = alpha; ctx.fillStyle = gradient; ctx.fillRect(x - radius, y - radius, radius * 2, radius * 2)
   }
   function annotation(name: string, catalog: string, point: Vector, radius: number, alpha = 1, priority = 5) {
-    if (alpha > 0.12 && point.x > 0 && point.x < width && point.y > 45 && point.y < height - 110) labels.push({ name, catalog, ...point, radius, alpha, priority })
+    const fixedSlot = solarLabelsActive && solarCaptionNames.includes(name)
+    const onScreen = point.x > 0 && point.x < width && point.y > 45 && point.y < height - 110
+    if (alpha > 0.12 && (fixedSlot || onScreen)) labels.push({ name, catalog, ...point, radius, alpha, priority })
   }
   function ring(id: string, centre: Vector, radius: number, flatten: number, alpha: number) {
     if (radius < 6 || radius > width * 7) return
@@ -168,15 +172,15 @@ export function createFlightRenderer(canvas: HTMLCanvasElement, ctx: CanvasRende
     if (departure > 0.8 && !mobile) annotation('ARION', 'FLIGHT IN PROGRESS', { x, y: y - 160 * scale }, 3, 0.85, 0)
   }
 
-  function drawMobileLabels() {
-    const frame = mobileAtlasFrame(width, height)
-    const items = labels.sort((a, b) => a.priority - b.priority)
+  function drawCaptionLabels(items: Label[], frame: ReturnType<typeof solarCaptionFrame>, names = items.map(item => item.name)) {
     ctx.font = `500 ${frame.font}px Consolas, monospace`
-    const captions = mobileAtlasCaptions(items.map(item => ({ name: item.name, distance: celestialDistances[item.name] ?? '' })), frame.captions, frame.font, text => ctx.measureText(text).width)
+    const captions = mobileAtlasCaptions(names.map(name => ({ name, distance: celestialDistances[name] ?? '' })), frame.captions, frame.font, text => ctx.measureText(text).width)
+    const entries = items.map(item => ({ item, caption: captions[names.indexOf(item.name)] }))
     // Draw every leader first; opaque caption backs keep lines and particles
     // out of the names, including long names which wrap instead of shrinking.
-    items.forEach((item, index) => {
-      const box = captions[index].box
+    entries.forEach(({ item, caption }) => {
+      if (item.x < 0 || item.x > width || item.y < 0 || item.y > height) return
+      const box = caption.box
       const endX = clamp(item.x, box.x, box.x + box.width)
       const endY = box.y + box.height / 2
       const angle = Math.atan2(endY - item.y, endX - item.x)
@@ -185,8 +189,8 @@ export function createFlightRenderer(canvas: HTMLCanvasElement, ctx: CanvasRende
       ctx.moveTo(item.x + Math.cos(angle) * item.radius, item.y + Math.sin(angle) * item.radius)
       ctx.lineTo(endX, endY); ctx.stroke()
     })
-    items.forEach((item, index) => {
-      const { box, text, lines, lineHeight, distance, distanceFont, distanceY } = captions[index]
+    entries.forEach(({ item, caption }) => {
+      const { box, text, lines, lineHeight, distance, distanceFont, distanceY } = caption
       ctx.globalAlpha = item.alpha
       ctx.fillStyle = '#050a18'; ctx.fillRect(box.x, box.y, box.width, box.height)
       ctx.fillStyle = '#dbeaff'; ctx.font = `500 ${frame.font}px Consolas, monospace`
@@ -202,7 +206,14 @@ export function createFlightRenderer(canvas: HTMLCanvasElement, ctx: CanvasRende
   }
 
   function drawLabels() {
-    if (mobile) { drawMobileLabels(); return }
+    if (solarLabelsActive) {
+      drawCaptionLabels(labels.filter(item => solarCaptionNames.includes(item.name)), solarCaptionFrame(width, height, mobile), solarCaptionNames)
+      return
+    }
+    if (mobile) {
+      drawCaptionLabels(labels.sort((a, b) => a.priority - b.priority), mobileAtlasFrame(width, height))
+      return
+    }
     const occupied: Box[] = []
     const minX = mobile ? 16 : width * 0.29
     const minY = 40
@@ -252,6 +263,7 @@ export function createFlightRenderer(canvas: HTMLCanvasElement, ctx: CanvasRende
   return {
     draw(progress: number, time: number, mouse: Vector, frozen: boolean) {
       pointer = mouse; paused = frozen; step = clamp((time - lastTime) * 30, 0.5, 3); lastTime = time; labels = []
+      solarLabelsActive = progress >= 0.38 && progress <= 0.58
       ctx.globalAlpha = 1; ctx.clearRect(0, 0, width, height)
       // Fit mobile systems and captions without changing desktop composition.
       const mobileFrame = mobileAtlasFrame(width, height)
