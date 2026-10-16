@@ -22,7 +22,7 @@ function inside(x: number, y: number, polygon: number[][]) {
 }
 
 export function createFlightRenderer(canvas: HTMLCanvasElement, ctx: CanvasRenderingContext2D) {
-  let width = 1; let height = 1; let mobile = false; let compact = false
+  let width = 1; let height = 1; let mobile = false
   let pointer: Vector = { x: -10000, y: -10000 }
   let paused = false
   let lastTime = 0
@@ -168,14 +168,14 @@ export function createFlightRenderer(canvas: HTMLCanvasElement, ctx: CanvasRende
 
   function drawLabels() {
     const occupied: Box[] = []
-    const minX = mobile ? 16 : width * 0.4
-    const minY = mobile ? (compact ? 165 : 260) : 80
-    const maxY = height - (mobile ? 178 : height < 400 ? 82 : 155)
-    const font = mobile ? 8 : 10
+    const minX = mobile ? 16 : width * 0.29
+    const minY = 40
+    const maxY = height - (mobile ? 100 : 90)
+    const font = mobile ? 12 : 15
     for (const item of labels.sort((a, b) => a.priority - b.priority)) {
       ctx.font = `500 ${font}px Consolas, monospace`
       const textWidth = Math.min(width - minX - 22, Math.max(ctx.measureText(item.name).width + 8, mobile ? 0 : ctx.measureText(item.catalog).width * 0.73))
-      const labelHeight = mobile ? 25 : 29
+      const labelHeight = mobile ? 34 : 40
       const gap = Math.min(item.radius, 65) + 14
       const candidates = [
         { x: item.x + gap, y: item.y - gap - 10 },
@@ -201,10 +201,12 @@ export function createFlightRenderer(canvas: HTMLCanvasElement, ctx: CanvasRende
       ctx.strokeStyle = '#8fafd06e'; ctx.lineWidth = 0.65; ctx.beginPath()
       ctx.moveTo(item.x + Math.cos(angle) * anchorR, item.y + Math.sin(angle) * anchorR)
       ctx.lineTo(endX, endY); ctx.stroke()
-      ctx.fillStyle = '#d5e7ff'; ctx.font = `500 ${font}px Consolas, monospace`
+      ctx.shadowColor = '#020411'; ctx.shadowBlur = 7
+      ctx.fillStyle = '#e4efff'; ctx.font = `500 ${font}px Consolas, monospace`
       ctx.fillText(item.name, selected.x, selected.y + font)
-      ctx.fillStyle = '#829abc'; ctx.font = `${mobile ? 6.5 : 7}px Consolas, monospace`
-      ctx.fillText(item.catalog, selected.x, selected.y + font + 12, textWidth)
+      ctx.fillStyle = '#a4badb'; ctx.font = `${mobile ? 9 : 11}px Consolas, monospace`
+      ctx.fillText(item.catalog, selected.x, selected.y + font + 15, textWidth)
+      ctx.shadowBlur = 0
     }
   }
 
@@ -212,11 +214,9 @@ export function createFlightRenderer(canvas: HTMLCanvasElement, ctx: CanvasRende
     draw(progress: number, time: number, mouse: Vector, frozen: boolean) {
       pointer = mouse; paused = frozen; step = clamp((time - lastTime) * 30, 0.5, 3); lastTime = time; labels = []
       ctx.globalAlpha = 1; ctx.clearRect(0, 0, width, height)
-      // Fit the atlas between the chapter and controls, including short panels.
-      const artTop = compact ? 165 : 260
-      const artBottom = Math.max(artTop + 100, height - 180)
-      const centre = { x: width * (mobile ? 0.5 : 0.68), y: mobile ? (artTop + artBottom) / 2 : height * 0.49 }
-      const unit = mobile ? Math.min(width * 0.43, (artBottom - artTop) * 0.46) : Math.min(width * 0.29, height * (height < 530 ? 0.32 : 0.43))
+      // Use the full background instead of squeezing the atlas between chapters.
+      const centre = { x: width * (mobile ? 0.52 : 0.61), y: height * (mobile ? 0.57 : 0.52) }
+      const unit = mobile ? Math.min(width * 0.58, height * 0.54) : Math.min(width * 0.35, height * 0.64)
       const background = ctx.createRadialGradient(centre.x, centre.y, 0, centre.x, centre.y, width * 0.8)
       background.addColorStop(0, '#030627'); background.addColorStop(0.65, '#050916'); background.addColorStop(1, '#06080e')
       ctx.fillStyle = background; ctx.fillRect(0, 0, width, height)
@@ -260,7 +260,8 @@ export function createFlightRenderer(canvas: HTMLCanvasElement, ctx: CanvasRende
       }
       annotation('MILKY WAY', 'OUR HOME GALAXY', milky, gr * 0.3, ease(0.72, 0.8, progress) * (1 - ease(0.88, 0.95, progress)), 2)
 
-      if (sr < width * 30 && sr > 1) {
+      // Neighbouring planets only enter once we leave the Earth–Moon view.
+      if (progress > 0.26 && sr < width * 30 && sr > 1) {
         const orbitOpacity = 0.26 * (1 - ease(0.49, 0.66, progress))
         for (let i = 0; i < planets.length; i++) {
           const planet = planets[i]
@@ -296,7 +297,6 @@ export function createFlightRenderer(canvas: HTMLCanvasElement, ctx: CanvasRende
     resize() {
       width = Math.max(1, canvas.clientWidth); height = Math.max(1, canvas.clientHeight)
       mobile = width <= 700 && !window.matchMedia('(max-width: 700px) and (max-height: 570px) and (orientation: landscape)').matches
-      compact = window.matchMedia('(max-height: 760px)').matches
       const dpr = Math.min(window.devicePixelRatio || 1, mobile ? 1.5 : 2)
       canvas.width = Math.round(width * dpr); canvas.height = Math.round(height * dpr)
       ctx.setTransform(dpr, 0, 0, dpr, 0, 0)

@@ -16,16 +16,18 @@ let container: HTMLDivElement
 let frames: Map<number, FrameRequestCallback>
 let nextFrame: number
 let reduced: boolean
+let observed: Element[]
 
 beforeEach(() => {
   reduced = false
+  observed = []
   frames = new Map()
   nextFrame = 0
   vi.stubGlobal('IS_REACT_ACT_ENVIRONMENT', true)
   vi.stubGlobal('requestAnimationFrame', (callback: FrameRequestCallback) => { frames.set(++nextFrame, callback); return nextFrame })
   vi.stubGlobal('cancelAnimationFrame', (id: number) => frames.delete(id))
   vi.stubGlobal('ResizeObserver', class { observe() {} disconnect() {} })
-  vi.stubGlobal('IntersectionObserver', class { observe() {} disconnect() {} })
+  vi.stubGlobal('IntersectionObserver', class { observe(element: Element) { observed.push(element) } disconnect() {} })
   vi.stubGlobal('matchMedia', () => ({ matches: reduced, addEventListener() {}, removeEventListener() {} }))
   vi.spyOn(HTMLCanvasElement.prototype, 'getContext').mockReturnValue({} as CanvasRenderingContext2D)
   vi.spyOn(window, 'scrollTo').mockImplementation(() => {})
@@ -41,13 +43,14 @@ afterEach(() => {
   vi.unstubAllGlobals()
 })
 function mount() {
-  act(() => root.render(<MemoryRouter><MotionProvider><FlightJourney /></MotionProvider></MemoryRouter>))
-  const section = container.querySelector<HTMLElement>('.journey')!
+  act(() => root.render(<MemoryRouter><MotionProvider><div className="home-journey"><FlightJourney /><section className="test-content">Homepage content</section></div></MotionProvider></MemoryRouter>))
+  const page = container.querySelector<HTMLElement>('.home-journey')!
   const viewport = container.querySelector<HTMLElement>('.journey__viewport')!
   viewport.style.top = '85px'
-  Object.defineProperty(section, 'offsetHeight', { value: 5000 })
+  Object.defineProperty(page, 'offsetHeight', { value: 5000, configurable: true })
+  Object.defineProperty(container.querySelector('.journey'), 'offsetHeight', { value: 800 })
   Object.defineProperty(viewport, 'offsetHeight', { value: 800 })
-  return section
+  return page
 }
 function step(now = 100) {
   act(() => {
@@ -86,13 +89,12 @@ describe('scroll flight behavior', () => {
     expect(renderer.draw.mock.lastCall?.[1]).toBe(0)
     expect(frames.size).toBe(0)
     expect(container.querySelector('.journey__viewport')?.getAttribute('data-stage')).toBe('solar')
-    expect(container.querySelector<HTMLElement>('.journey__intro')?.inert).toBe(true)
+    expect(container.querySelector('h1')?.textContent).toContain('우주를 향한')
     // Scroll backward updates the still frame while keeping time frozen.
     vi.mocked(section.getBoundingClientRect).mockReturnValue({ top: 85 } as DOMRect)
     act(() => window.dispatchEvent(new Event('scroll')))
     step(200)
     expect(renderer.draw.mock.lastCall?.[0]).toBe(0)
-    expect(container.querySelector<HTMLElement>('.journey__intro')?.inert).toBe(false)
   })
 
   it('uses the same scroll geometry for chapter navigation and cancels animation on unmount', () => {
@@ -120,7 +122,7 @@ describe('scroll flight behavior', () => {
     mount()
     step()
     expect(frames.size).toBe(0)
-    const toggle = container.querySelector<HTMLButtonElement>('.journey__footnote button')!
+    const toggle = container.querySelector<HTMLButtonElement>('.journey__toggle')!
     await act(async () => toggle.click())
     step(200)
     expect(renderer.draw.mock.lastCall?.[3]).toBe(false)
@@ -158,18 +160,39 @@ describe('scroll flight behavior', () => {
     }
   })
 
-  it('applies finite, wide repulsion to any point and releases it outside the field', () => {
+  it('halves the interaction radius at desktop and mobile sizes without changing peak displacement', () => {
     const pointer = { x: 400, y: 300 }
-    expect(particleForce(500, 300, pointer, 1440, 0).x).toBeGreaterThan(100)
-    expect(particleForce(640, 300, pointer, 1440, 0)).toEqual({ x: 0, y: 0 })
+    expect(particleForce(450, 300, pointer, 1440, 0).x).toBeGreaterThan(100)
+    expect(particleForce(520, 300, pointer, 1440, 0)).toEqual({ x: 0, y: 0 })
+    expect(particleForce(500, 300, pointer, 1440, 0).x).toBeGreaterThan(0)
+    expect(particleForce(500, 300, pointer, 390, 0)).toEqual({ x: 0, y: 0 })
+    expect(particleForce(400, 300, pointer, 1440, 0).x).toBe(175)
     expect(particleForce(400, 300, pointer, 1440, 1).x).toBeTypeOf('number')
     expect(Number.isFinite(particleForce(400, 300, pointer, 1440, 1).y)).toBe(true)
   })
 
+  it('keeps the background running beyond the hero and uses the entire content height', () => {
+    const page = mount()
+    expect(observed).toContain(page)
+    expect(observed).not.toContain(container.querySelector('.journey'))
+    vi.spyOn(page, 'getBoundingClientRect').mockReturnValue({ top: 85 - 2100, bottom: 2985 } as DOMRect)
+    step()
+    expect(renderer.draw.mock.lastCall?.[0]).toBe(0.5)
+    expect(frames.size).toBe(1)
+    // Content becoming longer changes progress without adding a flight runway.
+    Object.defineProperty(page, 'offsetHeight', { value: 9200 })
+    reduced = false
+    act(() => window.dispatchEvent(new Event('scroll')))
+    step(200)
+    const updatedProgress = renderer.draw.mock.lastCall?.[0] as number
+    expect(updatedProgress).toBeLessThan(0.5)
+    expect(updatedProgress).toBeGreaterThan(0.25)
+  })
+
   it('reacts over the scene but releases particles when the pointer moves onto navigation', () => {
     mount()
-    const canvas = container.querySelector('canvas')!
-    act(() => canvas.dispatchEvent(new MouseEvent('pointermove', { bubbles: true, clientX: 400, clientY: 300 })))
+    const content = container.querySelector('.test-content')!
+    act(() => content.dispatchEvent(new MouseEvent('pointermove', { bubbles: true, clientX: 400, clientY: 300 })))
     step()
     expect(renderer.draw.mock.lastCall?.[2]).toEqual({ x: 400, y: 300 })
     const button = container.querySelector('.journey__stages button')!

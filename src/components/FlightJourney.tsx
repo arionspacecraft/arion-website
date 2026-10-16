@@ -2,7 +2,7 @@ import { useEffect, useLayoutEffect, useRef, useState } from 'react'
 import { Link } from 'react-router-dom'
 import { home } from '../content/home'
 import { site } from '../content/site'
-import { ease, flightStages, mix, scrollProgress, stageAt } from '../lib/flightJourney'
+import { flightStages, mix, scrollProgress, stageAt } from '../lib/flightJourney'
 import { createFlightRenderer } from './particleUniverse'
 import { useMotion } from './Motion'
 
@@ -11,7 +11,7 @@ export default function FlightJourney() {
   const viewportRef = useRef<HTMLDivElement>(null)
   const canvasRef = useRef<HTMLCanvasElement>(null)
   const progressRef = useRef<HTMLDivElement>(null)
-  const introRef = useRef<HTMLDivElement>(null)
+  const statusRef = useRef<HTMLElement>(null)
   const [stage, setStage] = useState(0)
   const [canvasAvailable, setCanvasAvailable] = useState(true)
   const { paused, systemPaused, toggle } = useMotion()
@@ -20,6 +20,7 @@ export default function FlightJourney() {
 
   useEffect(() => {
     const section = sectionRef.current!
+    const page = section.closest<HTMLElement>('.home-journey') ?? section
     const viewport = viewportRef.current!
     const canvas = canvasRef.current!
     const context = canvas.getContext('2d')
@@ -38,19 +39,16 @@ export default function FlightJourney() {
 
     const readScroll = (delta: number) => {
       const inset = Number.parseFloat(getComputedStyle(viewport).top) || 0
-      const target = scrollProgress(section.getBoundingClientRect().top, section.offsetHeight, viewport.offsetHeight, inset)
+      const rect = page.getBoundingClientRect()
+      // The real homepage is the timeline. The hero adds no pinned scroll runway.
+      const target = scrollProgress(rect.top, page.offsetHeight, viewport.offsetHeight, inset)
       progress = motionRef.current || firstFrame ? target : mix(progress, target, 1 - Math.exp(-delta * 9))
       if (Math.abs(progress - target) < 0.0001) progress = target
       firstFrame = false
       const nextStage = stageAt(progress)
       if (lastStage !== nextStage) { lastStage = nextStage; setStage(nextStage) }
       if (progressRef.current) progressRef.current.style.transform = `scaleX(${progress})`
-      if (introRef.current) {
-        introRef.current.style.opacity = String(1 - ease(0.02, 0.14, progress))
-        introRef.current.style.transform = `translateY(${-ease(0, 0.16, progress) * 28}px)`
-        introRef.current.inert = progress >= 0.14
-      }
-      // Paused/reduced-motion visitors get discrete still scenes without zoom.
+      if (statusRef.current) statusRef.current.hidden = rect.bottom < viewport.offsetHeight * 0.5
       renderer.draw(motionRef.current ? flightStages[nextStage].position : progress, time, pointer, motionRef.current)
       dirty = false
     }
@@ -70,10 +68,10 @@ export default function FlightJourney() {
       if (!frame && visible && !document.hidden && !disposed) frame = requestAnimationFrame(tick)
     }
     const resize = () => { renderer.resize(); schedule() }
+    const leave = () => { pointer.x = -10000; pointer.y = -10000 }
     const move = (event: PointerEvent) => {
-      // Navigation and copy sit above the canvas; hovering them must not
-      // scatter a whole scene on short screens where the field is nearby.
-      if (event.target instanceof Element && event.target.closest('a, button, .journey__intro, .journey__chapter, .journey__topline, .journey__bottom')) {
+      // Listen through the content layer; never intercept its clicks or scrolling.
+      if (event.target instanceof Element && event.target.closest('a, button, summary, [data-flight-ui]')) {
         leave()
         return
       }
@@ -81,26 +79,25 @@ export default function FlightJourney() {
       pointer.x = event.clientX - rect.left
       pointer.y = event.clientY - rect.top
     }
-    const leave = () => { pointer.x = -10000; pointer.y = -10000 }
     const release = (event: PointerEvent) => { if (event.pointerType === 'touch') leave() }
     const resizeObserver = new ResizeObserver(resize)
     resizeObserver.observe(viewport)
+    resizeObserver.observe(page)
     const intersection = new IntersectionObserver(([entry]) => {
       visible = entry.isIntersecting
       if (visible) schedule()
       else { cancelAnimationFrame(frame); frame = 0 }
     })
-    intersection.observe(section)
-    // Watch the existing global motion control without rebuilding the scene.
+    intersection.observe(page)
     const motionObserver = new MutationObserver(schedule)
     const shell = section.closest('.site-shell')
     if (shell) motionObserver.observe(shell, { attributes: true, attributeFilter: ['class'] })
     window.addEventListener('scroll', schedule, { passive: true })
     document.addEventListener('visibilitychange', schedule)
-    viewport.addEventListener('pointermove', move, { passive: true })
-    viewport.addEventListener('pointerleave', leave)
-    viewport.addEventListener('pointerup', release)
-    viewport.addEventListener('pointercancel', leave)
+    page.addEventListener('pointermove', move, { passive: true })
+    page.addEventListener('pointerleave', leave)
+    page.addEventListener('pointerup', release)
+    page.addEventListener('pointercancel', leave)
     resize()
     return () => {
       disposed = true
@@ -110,53 +107,57 @@ export default function FlightJourney() {
       motionObserver.disconnect()
       window.removeEventListener('scroll', schedule)
       document.removeEventListener('visibilitychange', schedule)
-      viewport.removeEventListener('pointermove', move)
-      viewport.removeEventListener('pointerleave', leave)
-      viewport.removeEventListener('pointerup', release)
-      viewport.removeEventListener('pointercancel', leave)
+      page.removeEventListener('pointermove', move)
+      page.removeEventListener('pointerleave', leave)
+      page.removeEventListener('pointerup', release)
+      page.removeEventListener('pointercancel', leave)
     }
   }, [])
 
   function goToStage(index: number) {
     const section = sectionRef.current!
+    const page = section.closest<HTMLElement>('.home-journey') ?? section
     const viewport = viewportRef.current!
     const inset = Number.parseFloat(getComputedStyle(viewport).top) || 0
-    const top = window.scrollY + section.getBoundingClientRect().top - inset
-    window.scrollTo({ top: top + flightStages[index].position * (section.offsetHeight - viewport.offsetHeight), behavior: paused ? 'instant' : 'smooth' })
+    const top = window.scrollY + page.getBoundingClientRect().top - inset
+    window.scrollTo({ top: top + flightStages[index].position * (page.offsetHeight - viewport.offsetHeight), behavior: paused ? 'instant' : 'smooth' })
+    const atlas = statusRef.current?.querySelector('details')
+    if (atlas) {
+      atlas.open = false
+      atlas.querySelector('summary')?.focus({ preventScroll: true })
+    }
   }
 
   const current = flightStages[stage]
   return (
-    <section className={`journey${!canvasAvailable ? ' journey--fallback' : ''}`} ref={sectionRef} aria-label="스크롤로 떠나는 ARION 우주 비행">
-      <div className="journey__viewport" ref={viewportRef} data-stage={current.id}>
-        <canvas className="journey__canvas" ref={canvasRef} aria-hidden="true" />
-        {!canvasAvailable && <div className="journey__fallback"><img src={`${import.meta.env.BASE_URL}rocket-icon.svg`} alt="ARION 로켓" /><p>EARTH → SOLAR SYSTEM → MILKY WAY → COSMIC WEB</p></div>}
-        <div className="journey__topline"><span className="mono">ARION / THE COSMIC ODYSSEY</span><a href="#mission">SKIP FLIGHT <span aria-hidden="true">↘</span></a></div>
-        <div className="journey__intro" ref={introRef}>
+    <>
+      <div className="journey__viewport" ref={viewportRef} data-stage={current.id} aria-hidden="true">
+        <canvas className="journey__canvas" ref={canvasRef} />
+        {!canvasAvailable && <div className="journey__fallback"><img src={`${import.meta.env.BASE_URL}rocket-icon.svg`} alt="" /></div>}
+      </div>
+      <section className={`journey${!canvasAvailable ? ' journey--fallback' : ''}`} ref={sectionRef} aria-label="ARION 우주 비행">
+        <div className="journey__topline"><span className="mono">ARION / THE COSMIC ODYSSEY</span><span className="mono">SCROLL TO EXPLORE ↘</span></div>
+        <div className="journey__intro" data-flight-ui>
           <p className="launch__eyebrow"><span /> {home.hero.label} / EST. {site.founded}</p>
           <h1>{home.hero.first}<br /><span>{home.hero.second}</span></h1>
           <p className="journey__description">{site.description}.<br />{home.hero.note}</p>
           <div className="launch__actions"><Link to="/projects" className="button button--primary">우리의 프로젝트 <span aria-hidden="true">↗</span></Link><Link to="/about" className="launch__about">ARION 소개 <span aria-hidden="true">→</span></Link></div>
-          <p className="journey__invitation"><span aria-hidden="true">↓</span> 스크롤을 내려 비행을 시작하세요</p>
+          <a className="journey__invitation" href="#mission"><span aria-hidden="true">↓</span> 스크롤로 ARION 둘러보기</a>
         </div>
-        <div className="journey__chapter" hidden={stage === 0}>
-          <p className="journey__eyebrow mono">{current.number} / {current.en}</p>
-          <h2>{current.title}</h2>
-          <p className="journey__description">{current.description}</p>
-          {stage === flightStages.length - 1 && <a className="text-link" href="#mission">OUR STORY CONTINUES <span aria-hidden="true">↘</span></a>}
-        </div>
-        <div className="journey__caption" aria-live="polite" aria-atomic="true">
-          <span className="journey__signal" aria-hidden="true" />
-          {['MOVE YOUR CURSOR · DISTURB THE PARTICLES', 'TERRA & LUNA · A SHARED ORBIT', 'EIGHT WORLDS · ONE STAR', 'STARS · NEBULAE · STAR CLUSTERS', 'ISLANDS OF LIGHT · THE LOCAL GROUP', 'GALAXY CLUSTERS · THE COSMIC WEB'][stage]}
-        </div>
-        <div className="journey__bottom">
-          <div className="journey__track" aria-hidden="true"><div ref={progressRef} /></div>
+        <p className="journey__hero-note mono">ONE MISSION. AN INFINITE UNIVERSE.</p>
+      </section>
+      <aside className="journey__status" ref={statusRef} data-flight-ui aria-label="배경 우주 비행 조작">
+        <div className="journey__track" aria-hidden="true"><div ref={progressRef} /></div>
+        <details className="journey__atlas">
+          <summary><span className="mono">{current.number} / 06</span><span>{current.label}</span><span aria-hidden="true">⌃</span></summary>
           <nav className="journey__stages" aria-label="우주 비행 단계">
-            {flightStages.map((item, index) => <button key={item.id} onClick={() => goToStage(index)} aria-current={stage === index ? 'step' : undefined} type="button"><span className="mono">{item.number}</span><span>{item.label}</span><span className="journey__nav-dot" aria-hidden="true" /></button>)}
+            <p className="mono">FOLLOW THE SCROLL</p>
+            {flightStages.map((item, index) => <button key={item.id} onClick={() => goToStage(index)} aria-current={stage === index ? 'step' : undefined} type="button"><span className="mono">{item.number}</span><span>{item.label}</span></button>)}
+            <p className="journey__footnote">ILLUSTRATIVE ATLAS · NOT TO SCALE</p>
           </nav>
-          <div className="journey__footnote"><span>ILLUSTRATIVE ATLAS · NOT TO SCALE</span><button type="button" onClick={toggle} aria-pressed={paused}>{paused ? (systemPaused ? 'REDUCED MOTION · PLAY ▶' : 'RESUME FLIGHT ▶') : 'PAUSE FLIGHT Ⅱ'}</button></div>
-        </div>
-      </div>
-    </section>
+        </details>
+        <button className="journey__toggle" type="button" onClick={toggle} aria-pressed={paused} aria-label={paused ? (systemPaused ? 'REDUCED MOTION · PLAY' : 'RESUME FLIGHT') : 'PAUSE FLIGHT'}>{paused ? 'PLAY ▶' : 'PAUSE Ⅱ'}</button>
+      </aside>
+    </>
   )
 }

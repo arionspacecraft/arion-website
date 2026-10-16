@@ -18,7 +18,7 @@ export default function Home() {
     .slice(0, 3)
 
   return (
-    <>
+    <div className="home-journey">
       <FlightJourney />
 
       <Section id="mission" eyebrow="OUR MISSION" className="mission">
@@ -71,6 +71,6 @@ export default function Home() {
           <div className="join-banner__actions"><Link to="/recruit" className="button button--primary">모집 안내 보기 <span aria-hidden="true">↗</span></Link><RecruitStatus /></div>
         </div>
       </section>
-    </>
+    </div>
   )
 }
