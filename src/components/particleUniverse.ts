@@ -22,7 +22,7 @@ function inside(x: number, y: number, polygon: number[][]) {
 }
 
 export function createFlightRenderer(canvas: HTMLCanvasElement, ctx: CanvasRenderingContext2D) {
-  let width = 1; let height = 1; let mobile = false
+  let width = 1; let height = 1; let mobile = false; let compact = false
   let pointer: Vector = { x: -10000, y: -10000 }
   let paused = false
   let lastTime = 0
@@ -169,7 +169,7 @@ export function createFlightRenderer(canvas: HTMLCanvasElement, ctx: CanvasRende
   function drawLabels() {
     const occupied: Box[] = []
     const minX = mobile ? 16 : width * 0.4
-    const minY = mobile ? (height < 530 ? 150 : 235) : 80
+    const minY = mobile ? (compact ? 165 : 260) : 80
     const maxY = height - (mobile ? 178 : height < 400 ? 82 : 155)
     const font = mobile ? 8 : 10
     for (const item of labels.sort((a, b) => a.priority - b.priority)) {
@@ -212,8 +212,11 @@ export function createFlightRenderer(canvas: HTMLCanvasElement, ctx: CanvasRende
     draw(progress: number, time: number, mouse: Vector, frozen: boolean) {
       pointer = mouse; paused = frozen; step = clamp((time - lastTime) * 30, 0.5, 3); lastTime = time; labels = []
       ctx.globalAlpha = 1; ctx.clearRect(0, 0, width, height)
-      const centre = { x: width * (mobile ? 0.5 : 0.68), y: height * (mobile ? 0.58 : 0.49) }
-      const unit = Math.min(width * (mobile ? 0.43 : 0.29), height * (height < 530 ? (mobile ? 0.24 : 0.32) : (mobile ? 0.30 : 0.43)))
+      // Fit the atlas between the chapter and controls, including short panels.
+      const artTop = compact ? 165 : 260
+      const artBottom = Math.max(artTop + 100, height - 180)
+      const centre = { x: width * (mobile ? 0.5 : 0.68), y: mobile ? (artTop + artBottom) / 2 : height * 0.49 }
+      const unit = mobile ? Math.min(width * 0.43, (artBottom - artTop) * 0.46) : Math.min(width * 0.29, height * (height < 530 ? 0.32 : 0.43))
       const background = ctx.createRadialGradient(centre.x, centre.y, 0, centre.x, centre.y, width * 0.8)
       background.addColorStop(0, '#030627'); background.addColorStop(0.65, '#050916'); background.addColorStop(1, '#06080e')
       ctx.fillStyle = background; ctx.fillRect(0, 0, width, height)
@@ -293,6 +296,7 @@ export function createFlightRenderer(canvas: HTMLCanvasElement, ctx: CanvasRende
     resize() {
       width = Math.max(1, canvas.clientWidth); height = Math.max(1, canvas.clientHeight)
       mobile = width <= 700 && !window.matchMedia('(max-width: 700px) and (max-height: 570px) and (orientation: landscape)').matches
+      compact = window.matchMedia('(max-height: 760px)').matches
       const dpr = Math.min(window.devicePixelRatio || 1, mobile ? 1.5 : 2)
       canvas.width = Math.round(width * dpr); canvas.height = Math.round(height * dpr)
       ctx.setTransform(dpr, 0, 0, dpr, 0, 0)

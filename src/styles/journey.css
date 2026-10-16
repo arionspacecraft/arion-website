@@ -88,7 +88,7 @@
   .journey .launch__actions { margin-top: 18px; }
 }
 /* Keep stage controls inside short viewports, including phone landscape. */
-@media (max-height: 670px) {
+@media (max-height: 760px) {
   .journey__viewport { min-height: 0; }
   .journey__topline { top: 6px; }
   .journey__intro, .journey__chapter { top: 54px; }
