@@ -161,15 +161,15 @@ describe('scroll flight behavior', () => {
     }
   })
 
-  it('halves both the activation radius and visible scattering distance on desktop and mobile', () => {
+  it('scales the interaction footprint by 1.75 on desktop and mobile', () => {
     const pointer = { x: 400, y: 300 }
-    expect(particleForce(425, 300, pointer, 1440, 0).x).toBeGreaterThan(50)
-    expect(particleForce(460, 300, pointer, 1440, 0)).toEqual({ x: 0, y: 0 })
-    expect(particleForce(450, 300, pointer, 1440, 0).x).toBeGreaterThan(0)
-    expect(particleForce(450, 300, pointer, 390, 0)).toEqual({ x: 0, y: 0 })
-    expect(particleForce(440, 300, pointer, 390, 0).x).toBeGreaterThan(0)
-    expect(particleForce(400, 300, pointer, 1440, 0).x).toBe(87.5)
-    expect(particleForce(400, 300, pointer, 390, 0).x).toBe(58.5)
+    expect(particleForce(443.75, 300, pointer, 1440, 0).x).toBeGreaterThan(87.5)
+    expect(particleForce(505, 300, pointer, 1440, 0)).toEqual({ x: 0, y: 0 })
+    expect(particleForce(487.5, 300, pointer, 1440, 0).x).toBeGreaterThan(0)
+    expect(particleForce(487.5, 300, pointer, 390, 0)).toEqual({ x: 0, y: 0 })
+    expect(particleForce(470, 300, pointer, 390, 0).x).toBeGreaterThan(0)
+    expect(particleForce(400, 300, pointer, 1440, 0).x).toBe(87.5 * 1.75)
+    expect(particleForce(400, 300, pointer, 390, 0).x).toBeCloseTo(58.5 * 1.75)
     expect(particleForce(400, 300, pointer, 1440, 1).x).toBeTypeOf('number')
     expect(Number.isFinite(particleForce(400, 300, pointer, 1440, 1).y)).toBe(true)
   })
@@ -225,21 +225,21 @@ describe('scroll flight behavior', () => {
 
   it('anchors both the renderer and stage navigation to actual gaps after content reflows', () => {
     const page = mount(true)
-    let scroll = 576 // Earth gap centre is 696; it must already be complete here.
+    let scroll = 482 // Shorter Earth gap centre is 632; still complete 150px early.
     const tops = [800, 2100, 3400, 5000, 6500]
     Object.defineProperty(page, 'offsetHeight', { value: 8000, configurable: true })
     vi.spyOn(page, 'getBoundingClientRect').mockImplementation(() => ({ top: 85 - scroll, bottom: 8085 - scroll } as DOMRect))
     container.querySelectorAll('.journey__window').forEach((gap, index) => {
-      vi.spyOn(gap, 'getBoundingClientRect').mockImplementation(() => ({ top: 85 - scroll + tops[index], height: 624 } as DOMRect))
+      vi.spyOn(gap, 'getBoundingClientRect').mockImplementation(() => ({ top: 85 - scroll + tops[index], height: 496 } as DOMRect))
     })
     step()
     expect(renderer.draw.mock.lastCall?.[0]).toBe(0.22)
     const buttons = container.querySelectorAll<HTMLButtonElement>('.journey__stages button')
     act(() => buttons[5].click())
-    expect(window.scrollTo).toHaveBeenLastCalledWith({ top: 6396 - scroll, behavior: 'smooth' })
+    expect(window.scrollTo).toHaveBeenLastCalledWith({ top: 6332 - scroll, behavior: 'smooth' })
     // A longer project panel shifts all later gaps, regardless of total-page ratios.
     tops[2] += 500
-    scroll = 3796
+    scroll = 3732
     act(() => resized())
     for (let frame = 1; frame <= 20; frame++) step(100 + frame * 100)
     expect(renderer.draw.mock.lastCall?.[0]).toBe(0.65)

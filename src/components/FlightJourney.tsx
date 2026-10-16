@@ -18,7 +18,8 @@ function measureStops(page: HTMLElement, viewport: HTMLElement): FlightStop[] {
     return {
       scroll: Math.max(0, rect.top - pageTop + rect.height / 2 - height * 0.52),
       position: stage.position,
-      hold: Math.min(height * 0.2, rect.height * 0.28),
+      // Preserve the arrival lead even though the viewing gap is shorter.
+      hold: Math.min(height * 0.2, rect.height * 0.36),
     }
   })
 }
