@@ -9,7 +9,7 @@ export function mobileAtlasFrame(width: number, height: number) {
   const top = Math.max(16, height * 0.21)
   const bottom = Math.max(top + 80, Math.min(height * 0.83, height - 88))
   const available = bottom - top
-  const captionHeight = Math.min(150, available * 0.43)
+  const captionHeight = Math.min(170, available * 0.49)
   const scene: AtlasBox = landscape
     ? { x: 16, y: top + 6, width: width * 0.50 - 28, height: available - 12 }
     : { x: 16, y: top + 10, width: width - 32, height: available - captionHeight - 24 }
@@ -35,20 +35,29 @@ export function wrapAtlasName(name: string, maxWidth: number, measure: (text: st
   return lines
 }
 
-export function mobileAtlasCaptions(names: string[], bounds: AtlasBox, font: number, measure: (text: string) => number) {
-  const rows = Math.ceil(names.length / 2)
-  const rowHeight = Math.min(34, bounds.height / Math.max(1, rows))
+export function mobileAtlasCaptions(items: { name: string; distance: string }[], bounds: AtlasBox, font: number, measure: (text: string) => number) {
+  const rows = Math.ceil(items.length / 2)
   const columnWidth = (bounds.width - 12) / 2
   const lineHeight = font + 2
-  return names.map((name, index) => {
-    const lines = wrapAtlasName(name, columnWidth - 12, measure)
+  const distanceFont = font - 2
+  const wrapped = items.map(item => wrapAtlasName(item.name, columnWidth - 12, measure))
+  // Reserve space for the longest name in each row AND its distance. Uniform
+  // rows wasted space on short names and clipped wrapped names in transitions.
+  const heights = Array.from({ length: rows }, (_, row) =>
+    Math.max(...wrapped.slice(row * 2, row * 2 + 2).map(lines => lines.length)) * lineHeight + distanceFont + 7)
+  const totalHeight = heights.reduce((sum, value) => sum + value, 0)
+  const top = bounds.y + Math.max(0, (bounds.height - totalHeight) / 2)
+  return items.map((item, index) => {
+    const lines = wrapped[index]
+    const row = Math.floor(index / 2)
     const box: AtlasBox = {
       x: bounds.x + index % 2 * (columnWidth + 12),
-      y: bounds.y + (bounds.height - rows * rowHeight) / 2 + Math.floor(index / 2) * rowHeight,
+      y: top + heights.slice(0, row).reduce((sum, value) => sum + value, 0),
       width: columnWidth,
-      height: rowHeight - 3,
+      height: heights[row] - 3,
     }
-    const text: Vector = { x: box.x + 6, y: box.y + (box.height - lines.length * lineHeight) / 2 + font }
-    return { box, lines, text, lineHeight }
+    const text: Vector = { x: box.x + 6, y: box.y + 2 + font }
+    const distanceY = text.y + (lines.length - 1) * lineHeight + distanceFont + 2
+    return { box, lines, text, lineHeight, distance: item.distance, distanceFont, distanceY }
   })
 }

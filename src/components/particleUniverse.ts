@@ -1,6 +1,7 @@
 import { clamp, deepSky, ease, flightLayout, mix, moonAngle, orbitalPoint, orbitAngle, particleForce, planets, seededRandom, spinAngle, TAU } from '../lib/flightJourney'
 import type { Vector } from '../lib/flightJourney'
 import { mobileAtlasCaptions, mobileAtlasFrame } from '../lib/mobileAtlas'
+import { celestialDistances } from '../content/celestialDistances'
 
 type Label = { name: string; catalog: string; x: number; y: number; radius: number; alpha: number; priority: number }
 type Box = { x: number; y: number; width: number; height: number }
@@ -171,7 +172,7 @@ export function createFlightRenderer(canvas: HTMLCanvasElement, ctx: CanvasRende
     const frame = mobileAtlasFrame(width, height)
     const items = labels.sort((a, b) => a.priority - b.priority)
     ctx.font = `500 ${frame.font}px Consolas, monospace`
-    const captions = mobileAtlasCaptions(items.map(item => item.name), frame.captions, frame.font, text => ctx.measureText(text).width)
+    const captions = mobileAtlasCaptions(items.map(item => ({ name: item.name, distance: celestialDistances[item.name] ?? '' })), frame.captions, frame.font, text => ctx.measureText(text).width)
     // Draw every leader first; opaque caption backs keep lines and particles
     // out of the names, including long names which wrap instead of shrinking.
     items.forEach((item, index) => {
@@ -185,12 +186,19 @@ export function createFlightRenderer(canvas: HTMLCanvasElement, ctx: CanvasRende
       ctx.lineTo(endX, endY); ctx.stroke()
     })
     items.forEach((item, index) => {
-      const { box, text, lines, lineHeight } = captions[index]
+      const { box, text, lines, lineHeight, distance, distanceFont, distanceY } = captions[index]
       ctx.globalAlpha = item.alpha
       ctx.fillStyle = '#050a18'; ctx.fillRect(box.x, box.y, box.width, box.height)
       ctx.fillStyle = '#dbeaff'; ctx.font = `500 ${frame.font}px Consolas, monospace`
       lines.forEach((line, row) => ctx.fillText(line, text.x, text.y + row * lineHeight))
+      ctx.fillStyle = '#91b7d8'; ctx.font = `500 ${distanceFont}px Consolas, monospace`
+      ctx.fillText(distance, text.x, distanceY)
     })
+    if (items.length) {
+      ctx.globalAlpha = Math.max(...items.map(item => item.alpha))
+      ctx.fillStyle = '#91b7d8'; ctx.font = '500 9px Consolas, monospace'
+      ctx.fillText('DISTANCE FROM EARTH', frame.captions.x + 6, frame.captions.y - 6)
+    }
   }
 
   function drawLabels() {
@@ -201,9 +209,10 @@ export function createFlightRenderer(canvas: HTMLCanvasElement, ctx: CanvasRende
     const maxY = height - (mobile ? 100 : 90)
     const font = mobile ? 12 : 15
     for (const item of labels.sort((a, b) => a.priority - b.priority)) {
+      const distance = celestialDistances[item.name]
       ctx.font = `500 ${font}px Consolas, monospace`
-      const textWidth = Math.min(width - minX - 22, Math.max(ctx.measureText(item.name).width + 8, mobile ? 0 : ctx.measureText(item.catalog).width * 0.73))
-      const labelHeight = mobile ? 34 : 40
+      const textWidth = Math.min(width - minX - 22, Math.max(ctx.measureText(item.name).width + 8, ctx.measureText(item.catalog).width * 0.73, ctx.measureText(distance ? `${distance} · FROM EARTH` : '').width * 0.73))
+      const labelHeight = distance ? 55 : 40
       const gap = Math.min(item.radius, 65) + 14
       const candidates = [
         { x: item.x + gap, y: item.y - gap - 10 },
@@ -232,8 +241,10 @@ export function createFlightRenderer(canvas: HTMLCanvasElement, ctx: CanvasRende
       ctx.shadowColor = '#020411'; ctx.shadowBlur = 7
       ctx.fillStyle = '#e4efff'; ctx.font = `500 ${font}px Consolas, monospace`
       ctx.fillText(item.name, selected.x, selected.y + font)
-      ctx.fillStyle = '#a4badb'; ctx.font = `${mobile ? 9 : 11}px Consolas, monospace`
-      ctx.fillText(item.catalog, selected.x, selected.y + font + 15, textWidth)
+      ctx.fillStyle = '#a4badb'; ctx.font = '500 11px Consolas, monospace'
+      if (distance) ctx.fillText(distance === 'EARTH IS INSIDE' ? distance : `${distance} · FROM EARTH`, selected.x, selected.y + font + 15, textWidth)
+      ctx.fillStyle = '#8293ad'
+      ctx.fillText(item.catalog, selected.x, selected.y + font + (distance ? 30 : 15), textWidth)
       ctx.shadowBlur = 0
     }
   }

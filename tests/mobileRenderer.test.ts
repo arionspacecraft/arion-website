@@ -2,6 +2,7 @@
 import { afterEach, expect, it, vi } from 'vitest'
 import { createFlightRenderer } from '../src/components/particleUniverse'
 import { deepSky, planets } from '../src/lib/flightJourney'
+import { celestialDistances } from '../src/content/celestialDistances'
 
 afterEach(() => vi.restoreAllMocks())
 
@@ -36,7 +37,10 @@ it.each([[320, 495], [390, 771], [667, 302], [844, 305]])('renders every mobile 
   for (const stage of stages) for (const time of [0, 80, 240]) {
     points.length = 0; texts.length = 0
     renderer.draw(stage.progress, time, { x: -10000, y: -10000 }, false)
-    for (const name of stage.names) expect(texts.map(text => text.value).join(' ')).toContain(name)
+    for (const name of stage.names) {
+      expect(texts.map(text => text.value).join(' ')).toContain(name)
+      expect(texts.some(text => text.value === celestialDistances[name])).toBe(true)
+    }
     for (const text of texts) {
       expect(text.x).toBeGreaterThanOrEqual(0)
       expect(text.x + text.width).toBeLessThanOrEqual(width)

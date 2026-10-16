@@ -175,6 +175,7 @@ export default function FlightJourney() {
             <p className="mono">FOLLOW THE SCROLL</p>
             {flightStages.map((item, index) => <button key={item.id} onClick={() => goToStage(index)} aria-current={stage === index ? 'step' : undefined} type="button"><span className="mono">{item.number}</span><span>{item.label}</span></button>)}
             <p className="journey__footnote">ILLUSTRATIVE ATLAS · NOT TO SCALE</p>
+            <p className="journey__footnote">DISTANCES FROM EARTH · APPROXIMATE<br />PLANETS: ORBITAL RANGES · AVG: AVERAGE<br />M: MILLION · B: BILLION · ly: LIGHT-YEARS</p>
           </nav>
         </details>
         <button className="journey__toggle" type="button" onClick={toggle} aria-pressed={paused} aria-label={paused ? (systemPaused ? 'REDUCED MOTION · PLAY' : 'RESUME FLIGHT') : 'PAUSE FLIGHT'}>{paused ? 'PLAY ▶' : 'PAUSE Ⅱ'}</button>

@@ -43,6 +43,7 @@ src/
 - 우주 그래픽: `src/components/particleUniverse.ts`. 로켓·천체·궤도·은하·우주 구조를 모두 점으로 그리며, 같은 마우스 반응 반경 **126px**·최대 변위 **183.75px**를 공유합니다. 직전 값 105px·153.125px의 1.2배이며, 모바일도 반경 `화면 폭 × 0.2415`, 변위 `화면 폭 × 0.315`로 각각 1.2배 적용합니다(데스크톱 값이 상한). 기존 `ParticleField.tsx`와 첫 버전 `flightRenderer.ts`는 참고용으로 보존했습니다.
 - 연속 카메라: 하나의 중첩 좌표계와 로그 줌으로 같은 지구·태양·은하가 점차 작아집니다. 스크롤 변화에는 감쇠를 적용합니다. 전경의 ARION 로켓과 분사 입자·흐르는 별은 마지막 장면까지 비행감을 이어갑니다. 로켓은 가시성을 위한 비행 표식으로, 실제 거리 비율을 따르지 않습니다.
 - 천체 이름과 연결선은 실제 그려진 위치에 붙으며 화면 경계와 다른 라벨을 피합니다. `EARTH`는 태양계로 넘어가도 동일한 지구를 가리킵니다. 이름·단계·카탈로그 표기는 영어입니다.
+- 천체 이름 바로 아래에 **지구 기준 참고 거리**를 표시합니다. `src/content/celestialDistances.ts`에서 관리하며 실시간 천체력·로켓 고도·카메라의 이동 거리가 아닙니다. 달과 태양은 `AVG` 평균 거리, 다른 행성은 `~` 근사 궤도 범위, 성운·성단·은하·은하단은 광년(`ly`)을 사용합니다. `M`은 백만, `B`는 십억입니다. 지구는 `0 km · HOME`, 지구를 포함하는 SOLAR SYSTEM / MILKY WAY / LOCAL GROUP은 `EARTH IS INSIDE`로 표시합니다. 데스크톱은 이름 → 거리 → 카탈로그 순서, 모바일은 이름 → 거리 순서입니다. 모바일 캡션 행 높이는 줄바꿈된 이름과 거리 줄을 함께 측정합니다.
 - 데스크톱은 천체명 15px·보조 카탈로그 11px를 유지합니다. 모바일은 궤도·고리·외곽 은하단까지 화면에 들어오도록 배율과 중심을 계산합니다. 이름은 천체 아래의 두 열에 12px(좁은 화면·가로 화면 11px)로 표시하고, 긴 이름은 줄바꿈합니다. 가로 화면에서는 이름을 천체 옆에 배치합니다. 연결선은 캡션 바탕 뒤에 그리며, 모바일에서는 보조 카탈로그를 생략합니다. 모바일 배율·캡션 배치는 `src/lib/mobileAtlas.ts`에서 관리합니다. 장면별 문구·단계 위치·행성 속도·천체 목록은 `src/lib/flightJourney.ts`, 화면 배치는 `src/styles/journey.css`에서 관리합니다. 스크롤 길이는 실제 홈페이지 콘텐츠 높이에 따라 정해집니다.
 - 프로젝트 그래픽은 디자인용 개념도이며 실제 기체·회로 도면이 아닙니다.
 
@@ -51,6 +52,29 @@ src/
 - 모집 열기: `src/content/recruit.ts`의 `rounds`에 기간과 `applyUrl`(지원 폼 링크) 추가.
   기간에 따라 모집 예정 / 모집 중 / 모집 마감이 자동 표시된다.
 - 연락처: `src/content/site.ts`의 `contact` (빈 값은 화면에 표시되지 않음)
+
+## 천체 거리 자료
+
+2026-10-17 확인. 아래 값은 교육용 근삿값입니다. 행성 거리는 공전 위치에 따라 달라지며 현재 날짜의 실제 거리를 계산하지 않습니다. 화면의 천체 배치·크기·공전 속도와는 독립된 참고 정보입니다.
+
+| 대상 | 지구 기준 표시 | 1차 자료 |
+|---|---|---|
+| MOON | 평균 384,400 km | [NASA Moon Facts](https://science.nasa.gov/moon/facts/) |
+| SOL | 평균 149.6M km | [NASA Planetary Fact Sheet](https://nssdc.gsfc.nasa.gov/planetary/factsheet/) |
+| MERCURY / VENUS / MARS | 약 77–222 / 38–261 / 55–401M km | 같은 NASA 표의 근일점·원일점으로 계산 |
+| JUPITER / SATURN | 약 589–969M / 1.21–1.66B km | 같은 NASA 표의 근일점·원일점으로 계산 |
+| URANUS / NEPTUNE | 약 2.58–3.15B / 4.32–4.71B km | 같은 NASA 표의 근일점·원일점으로 계산 |
+| SAGITTARIUS A* | 약 26,000 ly | [NASA / Chandra](https://www.nasa.gov/image-article/supermassive-black-hole-sagittarius/) |
+| ORION NEBULA | 약 1,500 ly | [NASA Hubble M42](https://science.nasa.gov/mission/hubble/science/explore-the-night-sky/hubble-messier-catalog/messier-42/) |
+| OMEGA CENTAURI | 약 17,700 ly | [NASA Hubble](https://science.nasa.gov/asset/hubble/omega-centauri-2/) |
+| ANDROMEDA | 약 2.5M ly | [NASA Hubble M31](https://science.nasa.gov/mission/hubble/science/explore-the-night-sky/hubble-messier-catalog/messier-31/) |
+| TRIANGULUM | 약 3M ly | [NASA M33](https://www.nasa.gov/image-article/triangulum-galaxy/) |
+| LARGE MAGELLANIC CLOUD | 약 160,000 ly | [NASA / JPL](https://www.jpl.nasa.gov/images/pia07136-our-chaotic-neighbor/) |
+| VIRGO CLUSTER | 약 54M ly | [NASA Suzaku](https://www.nasa.gov/universe/suzaku-finds-common-chemical-makeup-at-largest-cosmic-scales/) |
+| COMA CLUSTER | 약 330M ly | [NASA / JPL](https://www.jpl.nasa.gov/images/pia04210-coma-cluster-of-galaxies/) |
+| PERSEUS CLUSTER | 약 240M ly | [Chandra, 2025](https://www.chandra.harvard.edu/photo/2025/filaments/index.html) |
+
+행성 범위의 계산: NASA 표에서 지구 근일점 147.1M km, 원일점 152.1M km를 사용합니다. 내행성의 하한은 `지구 근일점 − 행성 원일점`, 외행성의 하한은 `행성 근일점 − 지구 원일점`, 상한은 모두 `지구 원일점 + 행성 원일점`입니다. 이를 표시 자릿수로 반올림했습니다. 궤도의 방향·기울기·시각을 반영하지 않은 **기하학적 거리 범위의 근사**이며, 실제로 관측된 최소·최대 접근 기록이 아닙니다. 은하단도 깊이가 있으므로 대표적인 근삿값으로 읽어야 합니다.
 
 ## GitHub Pages 배포
 

@@ -1,6 +1,7 @@
 import { describe, expect, it } from 'vitest'
 import { deepSky, flightLayout, moonAngle, orbitalPoint, orbitAngle, planets } from '../src/lib/flightJourney'
 import { mobileAtlasCaptions, mobileAtlasFrame } from '../src/lib/mobileAtlas'
+import { celestialDistances } from '../src/content/celestialDistances'
 
 const screens = [[320, 495], [375, 594], [390, 771], [430, 859], [667, 302], [844, 305]]
 const names = [
@@ -51,16 +52,21 @@ describe('mobile atlas readability', () => {
     // Consolas is monospaced; use a conservative glyph width for the geometry check.
     const measure = (text: string) => text.length * frame.font * 0.65
     for (const stageNames of names) {
-      const captions = mobileAtlasCaptions(stageNames, frame.captions, frame.font, measure)
+      const captions = mobileAtlasCaptions(stageNames.map(name => ({ name, distance: celestialDistances[name] })), frame.captions, frame.font, measure)
       captions.forEach((caption, index) => {
-        const { box, text, lines, lineHeight } = caption
+        const { box, text, lines, lineHeight, distance, distanceFont, distanceY } = caption
         expect(lines.join(' ')).toBe(stageNames[index])
         expect(box.x).toBeGreaterThanOrEqual(0)
         expect(box.x + box.width).toBeLessThanOrEqual(width)
         expect(box.y + box.height).toBeLessThanOrEqual(height - 80)
+        expect(box.y + box.height).toBeLessThanOrEqual(frame.captions.y + frame.captions.height)
         lines.forEach(line => expect(text.x + measure(line)).toBeLessThanOrEqual(box.x + box.width))
         expect(text.y - frame.font).toBeGreaterThanOrEqual(box.y)
         expect(text.y + (lines.length - 1) * lineHeight + 2).toBeLessThanOrEqual(box.y + box.height)
+        expect(distance).toBeTruthy()
+        expect(text.x + distance.length * distanceFont * 0.65).toBeLessThanOrEqual(box.x + box.width)
+        expect(distanceY - distanceFont + 0.001).toBeGreaterThanOrEqual(text.y + (lines.length - 1) * lineHeight + 2)
+        expect(distanceY + 2).toBeLessThanOrEqual(box.y + box.height + 0.001)
         for (const other of captions.slice(index + 1)) {
           expect(box.x + box.width <= other.box.x || other.box.x + other.box.width <= box.x || box.y + box.height <= other.box.y || other.box.y + other.box.height <= box.y).toBe(true)
         }
