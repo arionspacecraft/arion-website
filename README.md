@@ -37,9 +37,11 @@ src/
 
 - 홈의 헤드라인·소개 문구: `src/content/home.ts`
 - 포인트 컬러: `src/styles/tokens.css`의 `--color-accent` (`#030627`)
-- 스크롤 우주 비행: `src/components/FlightJourney.tsx`가 첫 화면부터 로켓 발사 → 지구·달 → 태양계 → 우리 은하의 순서를 제어합니다. 아래로 스크롤하면 시야가 넓어지고, 위로 올리면 이전 장면으로 돌아갑니다. 단계 버튼과 비행 건너뛰기도 지원합니다.
-- 우주 그래픽: `src/components/flightRenderer.ts`. 기존 입자 로켓의 형태와 마우스 반응 범위(240px)·최대 변위(175px)를 이어받았습니다. 작은 화면에서는 화면 폭에 맞춰 조정합니다. 기존 `ParticleField.tsx`는 원본 참고용으로 보존했습니다.
-- 장면별 문구·단계 위치·행성 속도: `src/lib/flightJourney.ts`. 레이아웃·스크롤 길이: `src/styles/journey.css` (데스크톱 560svh, 모바일 500svh).
+- 스크롤 우주 비행: `src/components/FlightJourney.tsx`가 IGNITION → EARTH + MOON → SOLAR SYSTEM → MILKY WAY → LOCAL GROUP → COSMIC WEB의 여섯 단계를 제어합니다. 아래로 스크롤하면 시야가 넓어지고, 위로 올리면 이전 장면으로 돌아갑니다. 단계 버튼과 `SKIP FLIGHT`도 지원합니다.
+- 우주 그래픽: `src/components/particleUniverse.ts`. 로켓·천체·궤도·은하·우주 구조를 모두 점으로 그리며, 같은 마우스 반응 범위(240px)·최대 변위(175px)를 공유합니다. 작은 화면에서는 화면 폭에 맞춰 조정합니다. 기존 `ParticleField.tsx`와 첫 버전 `flightRenderer.ts`는 참고용으로 보존했습니다.
+- 연속 카메라: 하나의 중첩 좌표계와 로그 줌으로 같은 지구·태양·은하가 점차 작아집니다. 스크롤 변화에는 감쇠를 적용합니다. 전경의 ARION 로켓과 분사 입자·흐르는 별은 마지막 장면까지 비행감을 이어갑니다. 로켓은 가시성을 위한 비행 표식으로, 실제 거리 비율을 따르지 않습니다.
+- 천체 이름과 연결선은 실제 그려진 위치에 붙으며 화면 경계와 다른 라벨을 피합니다. `EARTH`는 태양계로 넘어가도 동일한 지구를 가리킵니다. 이름·단계·카탈로그 표기는 영어입니다.
+- 장면별 문구·단계 위치·행성 속도·천체 목록: `src/lib/flightJourney.ts`. 레이아웃·스크롤 길이: `src/styles/journey.css` (데스크톱 800svh, 모바일 720svh).
 - 프로젝트 그래픽은 디자인용 개념도이며 실제 기체·회로 도면이 아닙니다.
 
 - 소식 추가: `src/content/news.ts` 배열에 항목 추가
@@ -83,12 +85,18 @@ src/
 
 ## 로켓이 정지된 경우
 
-기기의 ‘동작 줄이기’ 설정을 감지하면 처음에는 정지 화면을 표시합니다. 상단 ▶ 버튼이나 비행 구간 하단 ‘애니메이션 재생’을 누르면 이 방문 중에는 직접 선택한 재생 상태를 사용합니다. 정지 중에도 스크롤·단계 버튼으로 각 장면의 정지 화면을 볼 수 있으며, 확대·축소 대신 단계별로 전환됩니다. 페이지를 새로 열거나 새로고침하면 기기 설정을 다시 따릅니다.
+기기의 ‘동작 줄이기’ 설정을 감지하면 처음에는 정지 화면을 표시합니다. 상단 ▶ 버튼이나 비행 구간 하단 `RESUME FLIGHT` / `REDUCED MOTION · PLAY`를 누르면 이 방문 중에는 직접 선택한 재생 상태를 사용합니다. 정지 중에도 스크롤·단계 버튼으로 각 장면의 정지 화면을 볼 수 있으며, 확대·축소 대신 단계별로 전환됩니다. 페이지를 새로 열거나 새로고침하면 기기 설정을 다시 따릅니다.
 
 Canvas 2D로 그리며 추가 그래픽 패키지나 WebGL에 의존하지 않습니다. 최대 30fps, 모바일 입자 수와 해상도 제한을 적용하고, 화면 밖이나 비활성 탭에서는 렌더링을 멈춥니다. Canvas를 지원하지 않으면 로켓 아이콘과 설명을 표시합니다.
 
 ## 우주 비행의 표현 범위
 
-이 화면은 거리·천체 크기·시간을 각각 압축한 개념 연출이며 실제 비행 궤적이나 현재 천체 위치를 예측하는 시뮬레이터가 아닙니다. 지구 표면의 회전, 달의 공전과 동주기 자전, 8개 행성의 서로 다른 공전·자전 속도, 금성·천왕성의 역행 자전, 회전하는 나선 은하를 표현합니다. 태양계 위치 표시는 은하 안의 대략적인 위치를 나타냅니다.
+이 화면은 거리·천체 크기·시간을 각각 압축한 개념 연출이며 실제 비행 궤적이나 현재 천체 위치를 예측하는 시뮬레이터가 아닙니다. 지구 표면의 회전, 달의 공전과 동주기 자전, 8개 행성의 서로 다른 공전·자전 속도, 금성·천왕성의 역행 자전, 회전하는 나선 은하를 표현합니다. 우주 전체가 하나의 물체처럼 회전하도록 만들지는 않습니다. 천체 이름과 분류는 실제 자료를 참고했지만, 배치는 구도를 위해 구성한 개념도이며 관측 좌표가 아닙니다.
+
+- MILKY WAY: SAGITTARIUS A*, ORION NEBULA (M42), OMEGA CENTAURI (NGC 5139).
+- LOCAL GROUP: ANDROMEDA (M31), TRIANGULUM (M33), LARGE MAGELLANIC CLOUD와 우리 은하.
+- COSMIC WEB: VIRGO CLUSTER (M87 포함), COMA CLUSTER (ABELL 1656), PERSEUS CLUSTER (ABELL 426). 이들은 은하단이며, 우리 은하 장면의 OMEGA CENTAURI는 구상성단입니다.
+
+명칭 참고: [NASA 은하 중심](https://science.nasa.gov/mission/webb/science-overview/science-explainers/what-is-the-center-of-our-galaxy-like/), [M42](https://science.nasa.gov/mission/hubble/science/explore-the-night-sky/hubble-messier-catalog/messier-42/), [Omega Centauri](https://science.nasa.gov/photojournal/pj-omega-centauri/), [Local Group](https://imagine.gsfc.nasa.gov/features/cosmic/local_group_info.html), [우주 거대 구조](https://science.nasa.gov/universe/galaxies/large-scale-structures/), [Coma Cluster](https://science.nasa.gov/photojournal/coma-cluster-of-galaxies/), [Perseus Cluster](https://imagine.gsfc.nasa.gov/features/cosmic/nearest_superclusters_info.html), [Virgo Cluster의 M87](https://science.nasa.gov/missions/hubble/nasas-hubble-space-telescope-probes-the-compact-nucleus-of-galaxy-m87/).
 
 참고: [NASA 달의 동주기 자전](https://science.nasa.gov/moon/facts/), [NASA 행성 자료](https://cdaweb.gsfc.nasa.gov/pub/documents/archived_websites/pwg.gsfc.nasa.gov/stargaze/SplanetsA.htm), [NASA 우리 태양계와 은하](https://science.nasa.gov/solar-system/solar-system-facts/).
