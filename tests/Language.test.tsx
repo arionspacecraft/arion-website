@@ -6,9 +6,6 @@ import { MemoryRouter } from 'react-router-dom'
 import { afterEach, beforeEach, expect, it, vi } from 'vitest'
 import App from '../src/App'
 
-vi.mock('../src/content/notion-projects.generated.ts', () => ({ default: {
-  state: 'ready', projects: [{ slug: 'test-project', title: '공개 연구', titleEn: 'Public research', summary: '공개 설명', summaryEn: 'A public research project.', status: '진행 중', period: '일정 미정', body: [], specs: [], links: [] }],
-} }))
 let root: Root
 let container: HTMLDivElement
 beforeEach(() => {
