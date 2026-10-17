@@ -7,7 +7,7 @@ import { solarCaptionNames } from '../src/lib/solarAtlas'
 afterEach(() => vi.restoreAllMocks())
 
 it.each([[1440, 815], [1280, 635], [1024, 515], [768, 651], [320, 495], [390, 771], [667, 302]])(
-  'keeps all solar names and distances fixed while planets orbit at %i × %i', (width, height) => {
+  'keeps nearby solar labels separate and moves them without jumps at %i × %i', (width, height) => {
     const texts: { value: string; x: number; y: number; width: number; font: number }[] = []
     const anchors: number[][] = []
     const fontSize = () => Number.parseFloat(String(context.font).split(' ')[1]) || 12
@@ -27,34 +27,60 @@ it.each([[1440, 815], [1280, 635], [1024, 515], [768, 651], [320, 495], [390, 77
     renderer.resize()
     renderer.draw(0.43, 0, { x: -10000, y: -10000 }, false)
     const initial = [...texts]
-    const initialAnchors = [...anchors]
     for (const name of solarCaptionNames) {
       expect(initial.some(text => text.value === name)).toBe(true)
       expect(initial.some(text => text.value === celestialDistances[name])).toBe(true)
     }
-    for (const text of initial) {
-      expect(text.x).toBeGreaterThanOrEqual(0)
-      expect(text.x + text.width).toBeLessThanOrEqual(width)
-      expect(text.y - text.font).toBeGreaterThanOrEqual(0)
-      expect(text.y + 2).toBeLessThan(height - 80)
-    }
-    initial.forEach((text, index) => {
-      for (const other of initial.slice(index + 1)) {
-        expect(text.x + text.width <= other.x || other.x + other.width <= text.x ||
-          text.y + 2 <= other.y - other.font + 0.001 || other.y + 2 <= text.y - text.font + 0.001).toBe(true)
+    const checkReadability = () => {
+      for (const text of texts) {
+        expect(text.x).toBeGreaterThanOrEqual(0)
+        expect(text.x + text.width).toBeLessThanOrEqual(width)
+        expect(text.y - text.font).toBeGreaterThanOrEqual(0)
+        expect(text.y + 2).toBeLessThan(height - 80)
       }
-    })
-    for (const time of [10, 40, 80, 160, 240]) {
-      texts.length = 0; anchors.length = 0
-      renderer.draw(0.43, time, { x: width / 2, y: height / 2 }, false)
-      expect(texts).toEqual(initial)
-      expect(anchors).not.toEqual(initialAnchors)
+      texts.forEach((text, index) => {
+        for (const other of texts.slice(index + 1)) {
+          expect(text.x + text.width <= other.x || other.x + other.width <= text.x ||
+            text.y + 2 <= other.y - other.font + 0.001 || other.y + 2 <= text.y - text.font + 0.001,
+          `${text.value} overlaps ${other.value}`).toBe(true)
+        }
+      })
     }
-    // Zoom/fade can remove a label but must not reflow any remaining slots.
-    for (const progress of [0.38, 0.4, 0.48, 0.54, 0.56]) {
+    checkReadability()
+    let last = initial
+    const maxStep = Math.max(100, (width - 32) * 0.1) / 30 + 0.01
+    const frames = width === 1440 ? 3600 : 900
+    for (let frame = 1; frame <= frames; frame++) {
+      texts.length = 0; anchors.length = 0
+      renderer.draw(0.43, frame / 30, { x: width / 2, y: height / 2 }, false)
+      checkReadability()
+      for (const text of texts) {
+        const old = last.find(item => item.value === text.value)!
+        expect(Math.hypot(text.x - old.x, text.y - old.y)).toBeLessThanOrEqual(maxStep)
+      }
+      last = [...texts]
+      if (frame % 900 === 0) {
+        const currentNames = texts.filter(text => solarCaptionNames.includes(text.value))
+        for (const [index, text] of currentNames.entries()) {
+          expect(Math.hypot(text.x - anchors[index][0], text.y - anchors[index][1]), `${text.value} has drifted away at ${frame / 30}s`).toBeLessThan(220)
+        }
+      }
+    }
+    expect(texts.some(text => { const old = initial.find(item => item.value === text.value)!; return Math.hypot(text.x - old.x, text.y - old.y) > 10 })).toBe(true)
+    // The names remain locally attached, not collected in a distant sidebar.
+    const names = texts.filter(text => solarCaptionNames.includes(text.value))
+    expect(names.filter((text, index) => text.x >= anchors[index][0]).length).toBeGreaterThanOrEqual(6)
+    const meanDistance = names.reduce((sum, text, index) => sum + Math.hypot(text.x - anchors[index][0], text.y - anchors[index][1]), 0) / names.length
+    expect(meanDistance).toBeLessThan(Math.max(140, width * 0.12))
+    texts.length = 0
+    renderer.draw(0.43, frames / 30, { x: -10000, y: -10000 }, true)
+    expect(texts).toEqual(last)
+    // Zoom and fade retain the gradual motion and separation.
+    for (const [index, progress] of [0.4, 0.48, 0.54, 0.56].entries()) {
       texts.length = 0
-      renderer.draw(progress, 40, { x: -10000, y: -10000 }, false)
-      for (const text of texts) expect(initial).toContainEqual(text)
+      renderer.draw(progress, frames / 30 + (index + 1) / 30, { x: -10000, y: -10000 }, false)
+      checkReadability()
     }
   },
+  60000,
 )
