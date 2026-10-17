@@ -1,3 +1,4 @@
+import { useLanguage } from '../lib/language'
 import { useEffect } from 'react'
 import { Outlet, useLocation } from 'react-router-dom'
 import Header from './Header'
@@ -5,6 +6,7 @@ import Footer from './Footer'
 import { MotionProvider } from './Motion'
 
 export default function Layout() {
+  const { t } = useLanguage()
   const { pathname } = useLocation()
 
   useEffect(() => {
@@ -26,7 +28,7 @@ export default function Layout() {
 
   return (
     <MotionProvider>
-      <a className="skip-link" href="#main-content">본문으로 바로가기</a>
+      <a className="skip-link" href="#main-content">{t("본문으로 바로가기")}</a>
       <Header />
       <main className="main" id="main-content" tabIndex={-1}>
         <Outlet />

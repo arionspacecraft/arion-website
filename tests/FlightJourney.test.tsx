@@ -185,12 +185,32 @@ describe('scroll flight behavior', () => {
     expect(frames.size).toBe(1)
     // Content becoming longer changes progress without adding a flight runway.
     Object.defineProperty(page, 'offsetHeight', { value: 9200 })
+    act(() => resized())
     reduced = false
     act(() => window.dispatchEvent(new Event('scroll')))
     step(200)
     const updatedProgress = renderer.draw.mock.lastCall?.[0] as number
     expect(updatedProgress).toBeLessThan(0.5)
     expect(updatedProgress).toBeGreaterThan(0.25)
+  })
+
+  it('caps scroll-event rendering and caches gap measurements until reflow', () => {
+    const page = mount(true)
+    vi.spyOn(page, 'getBoundingClientRect').mockReturnValue({ top: -2000, bottom: 3000 } as DOMRect)
+    const gap = container.querySelector('.journey__window')!
+    const measure = vi.spyOn(gap, 'getBoundingClientRect')
+    step(100)
+    const before = renderer.draw.mock.calls.length
+    for (let i = 1; i <= 60; i++) {
+      act(() => window.dispatchEvent(new Event('scroll')))
+      step(100 + i * 1000 / 60)
+    }
+    expect(renderer.draw.mock.calls.length - before).toBeGreaterThan(15)
+    expect(renderer.draw.mock.calls.length - before).toBeLessThanOrEqual(30)
+    expect(measure).toHaveBeenCalledTimes(1)
+    act(() => resized())
+    step(1200)
+    expect(measure).toHaveBeenCalledTimes(2)
   })
 
   it('reacts over the scene but releases particles when the pointer moves onto navigation', () => {

@@ -1,3 +1,4 @@
+import { useLanguage } from '../lib/language'
 import { Link, useParams } from 'react-router-dom'
 import PageHeader from '../components/PageHeader'
 import Section from '../components/Section'
@@ -7,6 +8,7 @@ import { usePageTitle } from '../lib/usePageTitle'
 import NotFound from './NotFound'
 
 export default function NewsDetail() {
+  const { t } = useLanguage()
   const { slug } = useParams()
   const index = sortedNews.findIndex((p) => p.slug === slug)
   const post = sortedNews[index]
@@ -19,17 +21,17 @@ export default function NewsDetail() {
 
   return (
     <>
-      <PageHeader eyebrow={`${post.category} · ${formatDate(post.date)}`} title={post.title} />
+      <PageHeader eyebrow={`${t(post.category)} · ${formatDate(post.date)}`} title={post.title} />
       <Section>
         <article className="prose">
           {post.body.map((paragraph) => (
-            <p key={paragraph}>{paragraph}</p>
+            <p key={paragraph}>{t(paragraph)}</p>
           ))}
         </article>
-        <nav className="pager" aria-label="다른 소식">
-          {older ? <Link to={`/news/${older.slug}`}>← {older.title}</Link> : <span />}
-          <Link to="/news">목록</Link>
-          {newer ? <Link to={`/news/${newer.slug}`}>{newer.title} →</Link> : <span />}
+        <nav className="pager" aria-label={t("다른 소식")}>
+          {older ? <Link to={`/news/${older.slug}`}>← {t(older.title)}</Link> : <span />}
+          <Link to="/news">{t("목록")}</Link>
+          {newer ? <Link to={`/news/${newer.slug}`}>{t(newer.title)} →</Link> : <span />}
         </nav>
       </Section>
     </>

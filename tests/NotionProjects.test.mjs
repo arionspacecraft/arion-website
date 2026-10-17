@@ -38,6 +38,24 @@ async function snapshot(responses) {
 }
 
 describe('Notion publication boundary', () => {
+  it('exports optional English copy only for public rows and excludes mentions', async () => {
+    const bilingualSchema = schema()
+    bilingualSchema.properties['프로젝트명 (EN)'] = { id: 'titleEn', type: 'rich_text', rich_text: {} }
+    bilingualSchema.properties['설명 (EN)'] = { id: 'summaryEn', type: 'rich_text', rich_text: {} }
+    const bilingualPage = page()
+    bilingualPage.properties['프로젝트명 (EN)'] = { id: 'titleEn', type: 'rich_text', rich_text: text('Public project') }
+    bilingualPage.properties['설명 (EN)'] = { id: 'summaryEn', type: 'rich_text', rich_text: [...text('Public summary'), { type: 'mention', plain_text: 'INTERNAL_PERSON' }] }
+    const privatePage = structuredClone(bilingualPage)
+    privatePage.id = sourceId
+    privatePage.properties['공개 태그'].multi_select = [{ id: 'secret', name: '대외비' }]
+    privatePage.properties['프로젝트명 (EN)'].rich_text = text('INTERNAL_ENGLISH')
+    const { output, fetchImpl } = await snapshot([database, bilingualSchema, result([bilingualPage, privatePage]), bilingualSchema])
+    expect(output.state).toBe('ready')
+    expect(output.projects).toHaveLength(1)
+    expect(output.projects[0]).toMatchObject({ titleEn: 'Public project', summaryEn: 'Public summary' })
+    expect(JSON.stringify(output)).not.toContain('INTERNAL')
+    expect(fetchImpl.mock.calls[2][0].searchParams.getAll('filter_properties[]')).toEqual(['title', 'tags', 'status', 'summary', 'date', 'titleEn', 'summaryEn'])
+  })
   it('publishes untagged rows with only approved fields and maps status/date', () => {
     const exported = publicProject(page(), readSchema(schema(), config), config)
     expect(exported).toEqual({ slug: `project-${id.replaceAll('-', '')}`, title: '공개 프로젝트', status: '계획', period: '2026.10.12', summary: '공개 설명', body: [], specs: [], links: [] })

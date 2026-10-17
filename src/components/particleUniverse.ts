@@ -207,7 +207,9 @@ export function createFlightRenderer(canvas: HTMLCanvasElement, ctx: CanvasRende
     }
   }
 
+  let cachedSolarMetrics: { font: number; distanceFont: number; bounds: Box; sizes: { name: string; width: number; height: number }[] } | undefined
   function solarLabelMetrics() {
+    if (cachedSolarMetrics) return cachedSolarMetrics
     const style = solarLabelStyle(width, height, mobile)
     const sizes = solarCaptionNames.map(name => {
       ctx.font = `500 ${style.font}px Consolas, monospace`
@@ -215,7 +217,8 @@ export function createFlightRenderer(canvas: HTMLCanvasElement, ctx: CanvasRende
       ctx.font = `500 ${style.distanceFont}px Consolas, monospace`
       return { name, width: Math.ceil(Math.max(nameWidth, ctx.measureText(celestialDistances[name]).width)) + 12, height: style.font + style.distanceFont + 8 }
     })
-    return { ...style, sizes }
+    cachedSolarMetrics = { ...style, sizes }
+    return cachedSolarMetrics
   }
 
   function drawSolarLabels() {
@@ -399,7 +402,10 @@ export function createFlightRenderer(canvas: HTMLCanvasElement, ctx: CanvasRende
       ctx.globalAlpha = 1
     },
     resize() {
-      if (width !== canvas.clientWidth || height !== canvas.clientHeight) solarLabelLayout.reset()
+      // Content reflows do not require clearing/reallocating the entire canvas.
+      if (width === canvas.clientWidth && height === canvas.clientHeight) return
+      solarLabelLayout.reset()
+      cachedSolarMetrics = undefined
       width = Math.max(1, canvas.clientWidth); height = Math.max(1, canvas.clientHeight)
       mobile = width <= 700 || (width <= 950 && height <= 500)
       const dpr = Math.min(window.devicePixelRatio || 1, mobile ? 1.5 : 2)

@@ -1,3 +1,4 @@
+import { useLanguage } from '../lib/language'
 type Props<T extends string> = {
   options: T[]
   value: T | null
@@ -5,11 +6,10 @@ type Props<T extends string> = {
 }
 
 export default function FilterTabs<T extends string>({ options, value, onChange }: Props<T>) {
+  const { t } = useLanguage()
   return (
-    <div className="tabs" role="group" aria-label="필터">
-      <button type="button" className="tab" aria-pressed={value === null} onClick={() => onChange(null)}>
-        전체
-      </button>
+    <div className="tabs" role="group" aria-label={t("필터")}>
+      <button type="button" className="tab" aria-pressed={value === null} onClick={() => onChange(null)}>{t("전체")} </button>
       {options.map((option) => (
         <button
           key={option}
@@ -18,7 +18,7 @@ export default function FilterTabs<T extends string>({ options, value, onChange 
           aria-pressed={value === option}
           onClick={() => onChange(option)}
         >
-          {option}
+          {t(option)}
         </button>
       ))}
     </div>

@@ -127,3 +127,15 @@ Canvas 2D로 그리며 추가 그래픽 패키지나 WebGL에 의존하지 않�
 명칭 참고: [NASA 은하 중심](https://science.nasa.gov/mission/webb/science-overview/science-explainers/what-is-the-center-of-our-galaxy-like/), [M42](https://science.nasa.gov/mission/hubble/science/explore-the-night-sky/hubble-messier-catalog/messier-42/), [Omega Centauri](https://science.nasa.gov/photojournal/pj-omega-centauri/), [Local Group](https://imagine.gsfc.nasa.gov/features/cosmic/local_group_info.html), [우주 거대 구조](https://science.nasa.gov/universe/galaxies/large-scale-structures/), [Coma Cluster](https://science.nasa.gov/photojournal/coma-cluster-of-galaxies/), [Perseus Cluster](https://imagine.gsfc.nasa.gov/features/cosmic/nearest_superclusters_info.html), [Virgo Cluster의 M87](https://science.nasa.gov/missions/hubble/nasas-hubble-space-telescope-probes-the-compact-nucleus-of-galaxy-m87/).
 
 참고: [NASA 달의 동주기 자전](https://science.nasa.gov/moon/facts/), [NASA 행성 자료](https://cdaweb.gsfc.nasa.gov/pub/documents/archived_websites/pwg.gsfc.nasa.gov/stargaze/SplanetsA.htm), [NASA 우리 태양계와 은하](https://science.nasa.gov/solar-system/solar-system-facts/).
+
+## 한국어 · English
+
+상단 `EN` / `한국어` 버튼은 현재 페이지를 유지하면서 메뉴·본문·접근성 이름·브라우저 제목을 전환합니다. 선택은 `arion-language`에 저장하며 저장소 접근이 막혀도 전환은 동작합니다. 기본 언어는 한국어입니다. 번역은 `src/content/english.ts`, 상태는 `LanguageProvider.tsx`와 `src/lib/language.ts`에서 관리합니다. 대표 영문 이름은 **Gil Hangyum**, 부대표는 **Jung Woojin**입니다.
+
+프로젝트는 노션 `프로젝트명 (EN)`과 `설명 (EN)` 속성으로 관리합니다. 기존 한국어 속성은 유지합니다. 영어 칸이 비어 있으면 해당 원문을 표시하므로 새 프로젝트를 추가할 때 두 언어를 함께 작성합니다. 영문 데이터도 동일한 `공개 태그` / `대외비` 검사 후에만 내보냅니다. 관련 업무·회의록·본문·멘션은 공개 데이터에 포함하지 않습니다.
+
+## 스크롤 렌더링 성능
+
+스크롤 이벤트가 30fps 제한을 우회하던 경로를 제거했습니다. 화면 위치만 바뀌는 스크롤에서는 도착점 전체를 다시 측정하지 않고, ResizeObserver로 화면·본문 크기가 바뀐 경우에만 측정합니다. 같은 크기의 Canvas를 반복 초기화하지 않으며, 태양계 글자 폭 측정을 캐시하고 포인터 반경 밖 입자의 거리 계산을 먼저 건너뜁니다. 불투명 배경에는 `alpha: false` 문맥을 사용합니다.
+
+회귀 검사에서는 60회/초 스크롤 입력에도 렌더 호출이 30회 이하이고, 도착점 측정은 크기 변경 전까지 한 번인지 확인합니다. 이것은 렌더 호출과 중복 작업 검증이며 모든 기기의 실측 FPS를 보장하지 않습니다. 더 필요한 경우 정적인 입자의 사전 렌더링, Canvas 그리기 묶음 처리, 기기 성능에 따른 입자 수 조절을 검토할 수 있습니다. 참고: [MDN Canvas 최적화](https://developer.mozilla.org/en-US/docs/Web/API/Canvas_API/Tutorial/Optimizing_canvas).

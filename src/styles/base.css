@@ -257,3 +257,13 @@ html:has(.motion-paused) { scroll-behavior: auto; }
   *, *::before, *::after { animation: none !important; transition: none !important; }
   .reveal { opacity: 1; transform: none; }
 }
+
+/* Language controls stay visible outside the mobile menu. */
+.language-toggle { flex-shrink: 0; min-width: 44px; min-height: 44px; padding: 6px 9px; border: 1px solid var(--color-border); border-radius: 3px; background: transparent; color: var(--color-text); font: 11px var(--font-mono); white-space: nowrap; }
+.language-toggle:hover { border-color: var(--color-highlight); }
+:lang(en) .journey h1 { letter-spacing: -.04em; line-height: 1.05; }
+:lang(en) .mission__title, :lang(en) .team-intro h2, :lang(en) .join-banner h2 { line-height: 1.15; }
+:lang(en) .team-module h3 { font-size: clamp(18px, 1.8vw, 27px); overflow-wrap: anywhere; }
+:lang(en) .team-module__en { display: none; }
+@media (max-width: 950px) and (min-width: 801px) { .nav { gap: 15px; } .header__inner { gap: 14px; } }
+@media (max-width: 560px) { .header__join { display: none; } .header__inner { gap: 8px; } .header__actions { gap: 6px; } }

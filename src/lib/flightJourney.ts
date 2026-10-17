@@ -108,8 +108,9 @@ export function flightLayout(progress: number, time: number) {
 export const PARTICLE_REACTION = { radius: 126, displacement: 183.75 } as const
 export function particleForce(x: number, y: number, pointer: Vector, width: number, phase: number): Vector {
   const dx = x - pointer.x; const dy = y - pointer.y
-  const distance = Math.hypot(dx, dy)
   const radius = Math.min(PARTICLE_REACTION.radius, width * 0.2415)
+  if (Math.abs(dx) >= radius || Math.abs(dy) >= radius) return { x: 0, y: 0 }
+  const distance = Math.hypot(dx, dy)
   if (distance >= radius) return { x: 0, y: 0 }
   const force = Math.pow(1 - distance / radius, 0.7) * Math.min(PARTICLE_REACTION.displacement, width * 0.315)
   const angle = distance > 0.1 ? Math.atan2(dy, dx) : phase
