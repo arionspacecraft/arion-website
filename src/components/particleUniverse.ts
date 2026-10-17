@@ -7,6 +7,19 @@ import { createSolarLabelLayout, solarLabelStyle, solarCaptionNames } from '../l
 type Label = { name: string; catalog: string; x: number; y: number; radius: number; alpha: number; priority: number }
 type Box = { x: number; y: number; width: number; height: number }
 type Displacement = { x: number; y: number }
+// Saturated inks for a light sky: preserve the identity of land, oceans,
+// planetary surfaces and spiral arms instead of multiplying every RGB channel.
+const daylightColors: Record<string, string> = {
+  '#96e5db': '#078c70', '#e2f2ff': '#82b6df', '#5d91d6': '#286bd5',
+  '#71b1f4': '#286bd5', '#6eaeef': '#286bd5', '#c6cfdd': '#657b9d',
+  '#fff0ce': '#eab23b', '#eab676': '#c67b12', '#eebf86': '#c67b12',
+  '#a9a39c': '#766859', '#e4c59a': '#ae7524', '#d8896c': '#c45537',
+  '#d3b99d': '#a66e42', '#e0c99f': '#b58b30', '#9fdcde': '#138f9b', '#6992ec': '#3d62dc',
+  '#eee2cc': '#bd8639', '#e7d8bd': '#d3a053', '#b9c3ff': '#8255c2', '#8baef0': '#416fc8',
+  '#9eaef0': '#5572ca', '#bac4ed': '#7b68b4', '#d6cbe3': '#9770af', '#e5dbef': '#8a54b3',
+  '#e5f1ff': '#1d3767', '#8fb7f6': '#4d83d1', '#9ecaff': '#328bd0',
+  '#718dbd': '#567fc2', '#8faacc': '#6d8fbb', '#4e90ff': '#3b83df', '#e9ac4e': '#d79225',
+}
 const continents = [
   [[-168, 65], [-130, 72], [-60, 52], [-80, 26], [-98, 16], [-119, 33], [-133, 54]],
   [[-80, 11], [-50, 5], [-35, -10], [-53, -35], [-70, -55], [-76, -25]],
@@ -24,7 +37,18 @@ function inside(x: number, y: number, polygon: number[][]) {
   return result
 }
 
-export function createFlightRenderer(canvas: HTMLCanvasElement, ctx: CanvasRenderingContext2D) {
+export function createFlightRenderer(canvas: HTMLCanvasElement, ctx: CanvasRenderingContext2D, getTheme: () => 'light' | 'dark' = () => 'dark') {
+  let light = false
+  const lightColors = new Map<string, string>()
+  function particleColor(color: string) {
+    if (!light) return color
+    let mapped = lightColors.get(color)
+    if (!mapped) {
+      mapped = (daylightColors[color.slice(0, 7)] ?? color.slice(0, 7)) + color.slice(7)
+      lightColors.set(color, mapped)
+    }
+    return mapped
+  }
   let width = 1; let height = 1; let mobile = false
   let pointer: Vector = { x: -10000, y: -10000 }
   let paused = false
@@ -83,13 +107,18 @@ export function createFlightRenderer(canvas: HTMLCanvasElement, ctx: CanvasRende
     const damping = 1 - Math.pow(force.x || force.y ? 0.84 : 0.90, step)
     offset.x = paused ? 0 : mix(offset.x, force.x, damping)
     offset.y = paused ? 0 : mix(offset.y, force.y, damping)
-    ctx.globalAlpha = clamp(alpha); ctx.fillStyle = color
-    ctx.beginPath(); ctx.arc(x + offset.x, y + offset.y, Math.max(0.35, radius), 0, TAU); ctx.fill()
+    const star = id.startsWith('star:')
+    const orbit = color === '#718dbd'
+    const rocketPoint = id.startsWith('rocket:') || id.startsWith('exhaust:')
+    ctx.globalAlpha = clamp(alpha * (light ? (star ? 0.75 : orbit ? 1.7 : rocketPoint ? 1.18 : 1.45) : 1))
+    ctx.fillStyle = particleColor(color)
+    const inkSize = light && !star && !orbit ? (rocketPoint ? 1.12 : 1.35) : 1
+    ctx.beginPath(); ctx.arc(x + offset.x, y + offset.y, Math.max(0.35, radius * inkSize), 0, TAU); ctx.fill()
   }
   function glow(x: number, y: number, radius: number, color: string, alpha = 1) {
     if (radius < 1 || x + radius < 0 || x - radius > width || y + radius < 0 || y - radius > height) return
     const gradient = ctx.createRadialGradient(x, y, 0, x, y, radius)
-    gradient.addColorStop(0, color); gradient.addColorStop(1, 'transparent')
+    gradient.addColorStop(0, particleColor(color)); gradient.addColorStop(1, 'transparent')
     ctx.globalAlpha = alpha; ctx.fillStyle = gradient; ctx.fillRect(x - radius, y - radius, radius * 2, radius * 2)
   }
   function annotation(name: string, catalog: string, point: Vector, radius: number, alpha = 1, priority = 5) {
@@ -126,7 +155,7 @@ export function createFlightRenderer(canvas: HTMLCanvasElement, ctx: CanvasRende
       const size = Math.min(1.9, Math.max(0.5, radius * (kind === 'earth' && p.land ? 0.009 : 0.006)))
       dot(`${id}:${i}`, centre.x + (px * cos - py * sin) * radius, centre.y + (px * sin + py * cos) * radius, size, tint, brightness * alpha)
     }
-    if (kind === 'earth') glow(centre.x, centre.y, radius * 1.2, '#4e90ff0c', alpha)
+    if (kind === 'earth') glow(centre.x, centre.y, radius * 1.2, light ? '#4e90ff20' : '#4e90ff0c', alpha)
   }
   function galaxy(id: string, centre: Vector, radius: number, time: number, tilt = -0.22, irregular = false) {
     if (radius < 0.8 || radius > width * 6 || centre.x + radius < -100 || centre.x - radius > width + 100 || centre.y + radius < -100 || centre.y - radius > height + 100) return
@@ -187,22 +216,22 @@ export function createFlightRenderer(canvas: HTMLCanvasElement, ctx: CanvasRende
       const endY = box.y + box.height / 2
       const angle = Math.atan2(endY - item.y, endX - item.x)
       ctx.globalAlpha = item.alpha * 0.55
-      ctx.strokeStyle = '#8fafd0'; ctx.lineWidth = 0.5; ctx.beginPath()
+      ctx.strokeStyle = light ? '#45638d' : '#8fafd0'; ctx.lineWidth = 0.5; ctx.beginPath()
       ctx.moveTo(item.x + Math.cos(angle) * item.radius, item.y + Math.sin(angle) * item.radius)
       ctx.lineTo(endX, endY); ctx.stroke()
     })
     entries.forEach(({ item, caption }) => {
       const { box, text, lines, lineHeight, distance, distanceFont, distanceY } = caption
       ctx.globalAlpha = item.alpha
-      ctx.fillStyle = '#050a18'; ctx.fillRect(box.x, box.y, box.width, box.height)
-      ctx.fillStyle = '#dbeaff'; ctx.font = `500 ${frame.font}px Consolas, monospace`
+      ctx.fillStyle = light ? '#f6f8fd' : '#050a18'; ctx.fillRect(box.x, box.y, box.width, box.height)
+      ctx.fillStyle = light ? '#16284b' : '#dbeaff'; ctx.font = `500 ${frame.font}px Consolas, monospace`
       lines.forEach((line, row) => ctx.fillText(line, text.x, text.y + row * lineHeight))
-      ctx.fillStyle = '#91b7d8'; ctx.font = `500 ${distanceFont}px Consolas, monospace`
+      ctx.fillStyle = light ? '#3c5d87' : '#91b7d8'; ctx.font = `500 ${distanceFont}px Consolas, monospace`
       ctx.fillText(distance, text.x, distanceY)
     })
     if (items.length) {
       ctx.globalAlpha = Math.max(...items.map(item => item.alpha))
-      ctx.fillStyle = '#91b7d8'; ctx.font = '500 9px Consolas, monospace'
+      ctx.fillStyle = light ? '#3c5d87' : '#91b7d8'; ctx.font = '500 9px Consolas, monospace'
       ctx.fillText('DISTANCE FROM EARTH', frame.captions.x + 6, frame.captions.y - 6)
     }
   }
@@ -233,17 +262,17 @@ export function createFlightRenderer(canvas: HTMLCanvasElement, ctx: CanvasRende
       const endY = clamp(item.y, box.y + 4, box.y + box.height - 4)
       const angle = Math.atan2(endY - item.y, endX - item.x)
       ctx.globalAlpha = item.alpha * 0.32
-      ctx.strokeStyle = '#8fafd0'; ctx.lineWidth = 0.6; ctx.beginPath()
+      ctx.strokeStyle = light ? '#45638d' : '#8fafd0'; ctx.lineWidth = 0.6; ctx.beginPath()
       ctx.moveTo(item.x + Math.cos(angle) * item.radius, item.y + Math.sin(angle) * item.radius)
       ctx.lineTo(endX, endY); ctx.stroke()
     })
     boxes.forEach((box, index) => {
       ctx.globalAlpha = items[index].alpha
-      ctx.fillStyle = '#050a18b8'; ctx.fillRect(box.x, box.y, box.width, box.height)
-      ctx.shadowColor = '#020411'; ctx.shadowBlur = 5
-      ctx.fillStyle = '#e4efff'; ctx.font = `500 ${metrics.font}px Consolas, monospace`
+      ctx.fillStyle = light ? '#f6f8fde6' : '#050a18b8'; ctx.fillRect(box.x, box.y, box.width, box.height)
+      ctx.shadowColor = '#020411'; ctx.shadowBlur = light ? 0 : 5
+      ctx.fillStyle = light ? '#16284b' : '#e4efff'; ctx.font = `500 ${metrics.font}px Consolas, monospace`
       ctx.fillText(box.name, box.x + 6, box.y + metrics.font + 2)
-      ctx.fillStyle = '#91b7d8'; ctx.font = `500 ${metrics.distanceFont}px Consolas, monospace`
+      ctx.fillStyle = light ? '#3c5d87' : '#91b7d8'; ctx.font = `500 ${metrics.distanceFont}px Consolas, monospace`
       ctx.fillText(celestialDistances[box.name], box.x + 6, box.y + metrics.font + metrics.distanceFont + 5)
       ctx.shadowBlur = 0
     })
@@ -290,15 +319,15 @@ export function createFlightRenderer(canvas: HTMLCanvasElement, ctx: CanvasRende
       const angle = Math.atan2(endY - item.y, endX - item.x)
       const anchorR = Math.min(item.radius, Math.hypot(endX - item.x, endY - item.y) * 0.45)
       // The anchor is the projected body centre/rim, not a fixed screen offset.
-      ctx.strokeStyle = '#8fafd06e'; ctx.lineWidth = 0.65; ctx.beginPath()
+      ctx.strokeStyle = light ? '#45638d6e' : '#8fafd06e'; ctx.lineWidth = 0.65; ctx.beginPath()
       ctx.moveTo(item.x + Math.cos(angle) * anchorR, item.y + Math.sin(angle) * anchorR)
       ctx.lineTo(endX, endY); ctx.stroke()
-      ctx.shadowColor = '#020411'; ctx.shadowBlur = 7
-      ctx.fillStyle = '#e4efff'; ctx.font = `500 ${font}px Consolas, monospace`
+      ctx.shadowColor = '#020411'; ctx.shadowBlur = light ? 0 : 7
+      ctx.fillStyle = light ? '#16284b' : '#e4efff'; ctx.font = `500 ${font}px Consolas, monospace`
       ctx.fillText(item.name, selected.x, selected.y + font)
-      ctx.fillStyle = '#a4badb'; ctx.font = '500 11px Consolas, monospace'
+      ctx.fillStyle = light ? '#3c5d87' : '#a4badb'; ctx.font = '500 11px Consolas, monospace'
       if (distance) ctx.fillText(distance === 'EARTH IS INSIDE' ? distance : `${distance} · FROM EARTH`, selected.x, selected.y + font + 15, textWidth)
-      ctx.fillStyle = '#8293ad'
+      ctx.fillStyle = light ? '#526784' : '#8293ad'
       ctx.fillText(item.catalog, selected.x, selected.y + font + (distance ? 30 : 15), textWidth)
       ctx.shadowBlur = 0
     }
@@ -306,6 +335,7 @@ export function createFlightRenderer(canvas: HTMLCanvasElement, ctx: CanvasRende
 
   return {
     draw(progress: number, time: number, mouse: Vector, frozen: boolean) {
+      light = getTheme() === 'light'
       labelDt = time - lastTime
       pointer = mouse; paused = frozen; step = clamp((time - lastTime) * 30, 0.5, 3); lastTime = time; labels = []
       solarLabelsActive = progress >= 0.38 && progress <= 0.58
@@ -324,7 +354,7 @@ export function createFlightRenderer(canvas: HTMLCanvasElement, ctx: CanvasRende
       centre = { x: mix(centre.x, (width - captionWidth - 12) / 2, solarFit), y: centre.y }
       unit = mix(unit, Math.min(unit, (width - captionWidth - 44) / 2.16), solarFit)
       const background = ctx.createRadialGradient(centre.x, centre.y, 0, centre.x, centre.y, width * 0.8)
-      background.addColorStop(0, '#030627'); background.addColorStop(0.65, '#050916'); background.addColorStop(1, '#06080e')
+      background.addColorStop(0, light ? '#d5e3fb' : '#030627'); background.addColorStop(0.65, light ? '#ecf1fb' : '#050916'); background.addColorStop(1, light ? '#f6f8fd' : '#06080e')
       ctx.fillStyle = background; ctx.fillRect(0, 0, width, height)
       for (let i = 0; i < stars.length; i++) {
         const s = stars[i]
@@ -382,7 +412,7 @@ export function createFlightRenderer(canvas: HTMLCanvasElement, ctx: CanvasRende
           annotation(planet.en, `PLANET ${String(i + 1).padStart(2, '0')}`, point, radius, ease(0.34, 0.42, progress) * (1 - ease(0.48, 0.57, progress)), i + 4)
         }
         sphere('sun', solar, sr * 0.047, '#eebf86', time * 0.14, 0, 'sun')
-        glow(solar.x, solar.y, Math.min(sr * 0.13, unit), '#e9ac4e0e')
+        glow(solar.x, solar.y, Math.min(sr * 0.13, unit), light ? '#e9ac4e24' : '#e9ac4e0e')
         annotation('SOL', 'THE SUN · G2 V', solar, sr * 0.047, ease(0.32, 0.42, progress) * (1 - ease(0.49, 0.58, progress)), 1)
       }
       if (er > 0.4) {

@@ -1,0 +1,90 @@
+/* Device theme styles shared by production and the local preview controls. */
+:root[data-theme='dark'] { color-scheme: dark; }
+:root[data-theme='light'] {
+  color-scheme: light;
+  --color-bg: #f6f8fd;
+  --color-surface: #fff;
+  --color-text: #101a34;
+  --color-muted: #52617b;
+  --color-border: #d1d9e8;
+  --color-highlight: #344e83;
+  --sky: #426091;
+}
+.theme-preview { position: fixed; left: 24px; bottom: 20px; z-index: 25; font-size: 11px; }
+.theme-preview > summary { display: flex; align-items: center; gap: 10px; min-height: 44px; padding: 10px 14px; border: 1px solid var(--color-border); border-radius: 4px; background: var(--color-surface); cursor: pointer; list-style: none; box-shadow: 0 5px 20px #03062712; }
+.theme-preview > summary::-webkit-details-marker { display: none; }
+.theme-preview > summary span { font: 9px var(--font-mono); color: var(--color-muted); }
+.theme-preview__options { position: absolute; bottom: calc(100% + 8px); left: 0; width: 232px; padding: 14px; border: 1px solid var(--color-border); background: var(--color-surface); border-radius: 4px; box-shadow: 0 8px 24px #03062720; }
+.theme-preview__options p { margin-bottom: 10px; }
+.theme-preview__options > div { display: flex; gap: 5px; }
+.theme-preview__options button { flex: 1; min-height: 44px; border: 1px solid var(--color-border); background: transparent; border-radius: 3px; font-size: 11px; }
+.theme-preview__options button[aria-pressed='true'] { background: #030627; color: #fff; border-color: #677bab; }
+.theme-preview__options small { display: block; color: var(--color-muted); margin-top: 10px; }
+
+:root[data-theme='light'] {
+  .header { background: #f6f8fdf2; border-color: var(--color-border); backdrop-filter: none; }
+  .header__logo, .footer__brand img, .journey__fallback img { filter: brightness(0) saturate(100%); }
+  .header__brand-sub { color: var(--color-muted); border-color: var(--color-border); }
+  .nav__link, .motion-toggle, .language-toggle { color: #344561; }
+  .nav__link:hover, .nav__link.active { color: #030627; }
+  .nav__link::after, .header__toggle span { background: #344e83; }
+  .header__join, .language-toggle { border-color: #a8b5d0; }
+  .header__join:hover { color: white; }
+  .language-toggle:hover { color: #030627; background: #e3eaf7; }
+  .nav__index { color: #526a94; }
+  .page-header { background: radial-gradient(ellipse at 85% 20%, #e0e8fb, #f1f4fc 65%); border-color: var(--color-border); }
+  .page-header .eyebrow, .page-header .lead, .card > .eyebrow { color: #425b85; }
+  .button { color: #16264c; border-color: #7082a4; }
+  .button:hover { background: #e1e8f6; }
+  .button--primary, .journey .button--primary { background: #030627; color: #fff; border-color: #030627; }
+  .button--primary:hover, .journey .button--primary:hover { background: #1b2447; }
+  .badge { color: #425777; border-color: #a7b5cf; }
+  .badge--active::before { background: #4265a3; }
+  .badge--accent { color: white; }
+  .tab { color: #465b7b; border-color: #b5c0d6; }
+  .tab[aria-pressed='true'] { color: #fff; }
+  .project-card__link, .timeline__date, .numbered > li::before { color: #3f5882; }
+  .home-projects, .footer { background: #edf1f9; }
+  .news-item__link:hover { background: #e7edf9; }
+  .news-item__arrow, .prose { color: #435471; }
+  .recruit-box { background: #e7edf9; }
+  .recruit-status { color: #425777; }
+  .footer__person > p { color: #1d3054; }
+  .footer__nav a, .footer__contact > p:not(.eyebrow), .footer__bottom, .footer__bottom button { color: #4a5e80; }
+  .footer__nav a:hover, .footer__contact a:hover { color: #030627; }
+  .team-module { background: #fff; border-color: var(--color-border); }
+  .team-module:hover { background: #e9effb; }
+  .team-module__top, .team-module__en, .team-module > p { color: #50698f; }
+  .mission__title span, .stats__motto dd, .team-intro h2 > span, .team-intro em { color: #48638e; }
+  .mission__orbit span { background: #4b6798; }
+  .join-banner { background: #e9eefb; }
+  .join-banner .eyebrow, .join-banner h2 > span, .join-banner__description { color: #4d638a; }
+  .join-banner .button { background: #030627; border-color: #030627; color: #fff; }
+  .journey__viewport { background: #f6f8fd; }
+  .journey__intro, .home-journey .section__head, .home-journey .mission__layout, .home-journey .team-intro, .home-journey .stats { text-shadow: none; }
+  .journey h1 > span { color: #48638e; }
+  .journey__topline, .launch__eyebrow, .journey__description, .journey__hero-note, .journey__invitation, .launch__about { color: #4a6084; }
+  .launch__eyebrow > span { border-color: #4a6084; }
+  .launch__about:hover { color: #030627; }
+  .home-journey > .section, .home-journey > .join-banner { background: linear-gradient(90deg, #f7f9fff0, #f7f9ffce 48%, #f7f9ff5c); }
+  .home-journey .project-card, .home-journey .team-module { background: #fffffff0; }
+  .home-journey .news-item { background: #f7f9ffe3; }
+  .home-journey .section__description, .home-journey .muted { color: #52617b; }
+  .journey__status, .journey__stages { background: #f8fafff7; border-color: #afbed7; box-shadow: 0 8px 28px #26385a15; }
+  .journey__atlas summary { color: #17284d; }
+  .journey__atlas summary .mono, .journey__toggle, .journey__stages > .mono, .journey__stages button, .journey__footnote { color: #486088; }
+  .journey__stages button[aria-current='step'], .journey__stages button:hover { color: #030627; background: #e0e8f8; }
+  .journey__track > div { background: #42649c; }
+  :is(button, a, summary):focus-visible { outline-color: #385d99; }
+  @media (max-width: 800px) {
+    .nav { background: #f8faff; border-color: var(--color-border); box-shadow: 0 20px 40px #20325018; }
+    .nav__link { border-color: var(--color-border); }
+  }
+  @media (max-width: 700px) {
+    .home-journey > .section, .home-journey > .join-banner { background: #f7f9ffdc; }
+  }
+}
+@media (max-width: 700px) {
+  .theme-preview { left: 16px; bottom: 88px; }
+  body:not(:has(.home-journey)) .theme-preview { bottom: 16px; }
+}

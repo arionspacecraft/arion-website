@@ -1,5 +1,6 @@
 import { Route, Routes } from 'react-router-dom'
 import LanguageProvider from './components/LanguageProvider'
+import ThemePreview from './components/ThemePreview'
 import Layout from './components/Layout'
 import Home from './pages/Home'
 import About from './pages/About'
@@ -15,6 +16,7 @@ import NotFound from './pages/NotFound'
 export default function App() {
   return (
     <LanguageProvider>
+    <ThemePreview />
     <Routes>
       <Route element={<Layout />}>
         <Route index element={<Home />} />

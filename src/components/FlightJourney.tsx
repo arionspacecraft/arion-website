@@ -45,7 +45,7 @@ export default function FlightJourney() {
     const canvas = canvasRef.current!
     const context = canvas.getContext('2d', { alpha: false })
     if (!context) { setCanvasAvailable(false); return }
-    const renderer = createFlightRenderer(canvas, context)
+    const renderer = createFlightRenderer(canvas, context, () => document.documentElement.dataset.theme === 'light' ? 'light' : 'dark')
     let frame = 0
     let previous = 0
     let time = 0
@@ -121,6 +121,7 @@ export default function FlightJourney() {
     })
     intersection.observe(page)
     const motionObserver = new MutationObserver(schedule)
+    motionObserver.observe(document.documentElement, { attributes: true, attributeFilter: ['data-theme'] })
     const shell = section.closest('.site-shell')
     if (shell) motionObserver.observe(shell, { attributes: true, attributeFilter: ['class'] })
     window.addEventListener('scroll', schedule, { passive: true })

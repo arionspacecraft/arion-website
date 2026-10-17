@@ -5,6 +5,7 @@ import './styles/tokens.css'
 import './styles/base.css'
 import './styles/flight.css'
 import './styles/journey.css'
+import './styles/theme-preview.css'
 import App from './App.tsx'
 
 createRoot(document.getElementById('root')!).render(
