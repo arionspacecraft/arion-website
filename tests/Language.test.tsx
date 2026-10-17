@@ -26,8 +26,8 @@ it('switches the whole site, retains the route, and remembers the language after
   expect(container.textContent).toContain('길한겸')
   act(() => container.querySelector<HTMLButtonElement>('.language-toggle')!.click())
   expect(container.querySelector('h1')?.textContent).toBe('Contact')
-  expect(container.textContent).toContain('Gil Hangyum')
-  expect(container.textContent).toContain('Jung Woojin')
+  expect(container.textContent).toContain('Hangyum Gil')
+  expect(container.textContent).toContain('Woojin Jung')
   expect(document.documentElement.lang).toBe('en')
   expect(document.title).toBe('Contact | ARION')
   expect(localStorage.getItem('arion-language')).toBe('en')
@@ -41,13 +41,28 @@ it('switches the whole site, retains the route, and remembers the language after
 it.each(['/', '/about', '/teams', '/projects', '/projects/test-project', '/news', '/news/hybrid-study-start', '/news/club-booth', '/news/recruit-2026', '/recruit', '/contact', '/missing'])(
   'renders English page copy and accessible names on %s', path => {
     localStorage.setItem('arion-language', 'en'); mount(path)
-    const visibleText = container.textContent!.replaceAll('한국어', '')
+    const siteCopy = container.cloneNode(true) as HTMLElement
+    siteCopy.querySelectorAll('[data-notion-content]').forEach(element => element.remove())
+    const visibleText = siteCopy.textContent!.replaceAll('한국어', '')
     expect(visibleText.match(/[가-힣]+/g), visibleText).toBeNull()
     const labels = [...container.querySelectorAll('[aria-label]')].filter(el => !el.classList.contains('language-toggle')).map(el => el.getAttribute('aria-label')).join(' ')
     expect(labels).not.toMatch(/[가-힣]/)
-    expect(document.title).not.toMatch(/[가-힣]/)
+    if (path === '/projects/test-project') expect(document.title).toBe('공개 연구 | ARION')
+    else expect(document.title).not.toMatch(/[가-힣]/)
   },
 )
+
+it.each(['/', '/projects', '/projects/test-project'])('preserves Notion original copy in both languages on %s', path => {
+  mount(path)
+  const original = [...container.querySelectorAll('[data-notion-content]')].map(element => element.textContent)
+  expect(original).toContain('공개 연구')
+  // This text also exists in the site dictionary: it must not translate here.
+  expect(original).toContain('온 우주를 탐구하다')
+  act(() => container.querySelector<HTMLButtonElement>('.language-toggle')!.click())
+  expect([...container.querySelectorAll('[data-notion-content]')].map(element => element.textContent)).toEqual(original)
+  expect(container.textContent).not.toContain('Public research')
+  expect(container.textContent).not.toContain('A public research project.')
+})
 
 it('keeps category filters functional in English', () => {
   localStorage.setItem('arion-language', 'en'); mount('/projects')
@@ -62,5 +77,5 @@ it('still switches when persistent storage is unavailable', () => {
   vi.spyOn(Storage.prototype, 'setItem').mockImplementation(() => { throw new Error('blocked') })
   mount('/contact')
   act(() => container.querySelector<HTMLButtonElement>('.language-toggle')!.click())
-  expect(container.textContent).toContain('Gil Hangyum')
+  expect(container.textContent).toContain('Hangyum Gil')
 })

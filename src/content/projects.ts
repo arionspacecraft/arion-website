@@ -5,8 +5,6 @@ export type ProjectStatus = '진행 중' | '완료' | '계획' | '아카이브'
 export type Project = {
   slug: string
   title: string
-  titleEn?: string
-  summaryEn?: string
   status: ProjectStatus
   period: string
   summary: string
@@ -22,6 +20,3 @@ export const projectsEmptyMessage = projectsAvailable
   ? '공개된 프로젝트를 준비하고 있습니다.'
   : '프로젝트 정보를 업데이트하고 있습니다. 잠시 후 다시 방문해 주세요.'
 export const projectStatuses: ProjectStatus[] = ['진행 중', '완료', '계획', '아카이브']
-export function localizeProject(project: Project, language: 'ko' | 'en'): Project {
-  return language === 'en' ? { ...project, title: project.titleEn || project.title, summary: project.summaryEn || project.summary } : project
-}

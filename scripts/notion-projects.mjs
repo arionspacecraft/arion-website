@@ -38,10 +38,6 @@ export function readSchema(schema, config) {
     summary: property(schema.properties, keys.summary, ['rich_text']),
     date: property(schema.properties, keys.date, ['date']),
   }
-  // English copy is optional, but never bypasses the publication boundary.
-  for (const key of ['titleEn', 'summaryEn']) {
-    if (keys[key] && schema.properties?.[keys[key]]) mapping[key] = property(schema.properties, keys[key], ['rich_text'])
-  }
   const options = mapping.tags.multi_select?.options
   requireValue(Array.isArray(options), 'TAG_SCHEMA_INVALID')
   const tag = options.find((option) => normalize(option.name) === config.confidentialTag)
@@ -73,8 +69,6 @@ export function publicProject(page, schema, config) {
   return {
     slug: `project-${page.id.replaceAll('-', '').toLowerCase()}`,
     title, status, period, summary,
-    ...(schema.mapping.titleEn ? { titleEn: textValue(field('titleEn').rich_text) } : {}),
-    ...(schema.mapping.summaryEn ? { summaryEn: textValue(field('summaryEn').rich_text) } : {}),
     body: [], specs: [], links: [],
   }
 }

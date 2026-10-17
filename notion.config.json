@@ -5,9 +5,7 @@
     "tags": "공개 태그",
     "status": "상태",
     "summary": "설명",
-    "date": "발사 예정일",
-    "titleEn": "프로젝트명 (EN)",
-    "summaryEn": "설명 (EN)"
+    "date": "발사 예정일"
   },
   "confidentialTag": "대외비",
   "statusMap": {

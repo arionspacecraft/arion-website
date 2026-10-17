@@ -38,7 +38,7 @@ async function snapshot(responses) {
 }
 
 describe('Notion publication boundary', () => {
-  it('exports optional English copy only for public rows and excludes mentions', async () => {
+  it('uses original public copy and ignores legacy English fields', async () => {
     const bilingualSchema = schema()
     bilingualSchema.properties['프로젝트명 (EN)'] = { id: 'titleEn', type: 'rich_text', rich_text: {} }
     bilingualSchema.properties['설명 (EN)'] = { id: 'summaryEn', type: 'rich_text', rich_text: {} }
@@ -52,9 +52,11 @@ describe('Notion publication boundary', () => {
     const { output, fetchImpl } = await snapshot([database, bilingualSchema, result([bilingualPage, privatePage]), bilingualSchema])
     expect(output.state).toBe('ready')
     expect(output.projects).toHaveLength(1)
-    expect(output.projects[0]).toMatchObject({ titleEn: 'Public project', summaryEn: 'Public summary' })
+    expect(output.projects[0]).toMatchObject({ title: '공개 프로젝트', summary: '공개 설명' })
+    expect(output.projects[0]).not.toHaveProperty('titleEn')
+    expect(output.projects[0]).not.toHaveProperty('summaryEn')
     expect(JSON.stringify(output)).not.toContain('INTERNAL')
-    expect(fetchImpl.mock.calls[2][0].searchParams.getAll('filter_properties[]')).toEqual(['title', 'tags', 'status', 'summary', 'date', 'titleEn', 'summaryEn'])
+    expect(fetchImpl.mock.calls[2][0].searchParams.getAll('filter_properties[]')).toEqual(['title', 'tags', 'status', 'summary', 'date'])
   })
   it('publishes untagged rows with only approved fields and maps status/date', () => {
     const exported = publicProject(page(), readSchema(schema(), config), config)

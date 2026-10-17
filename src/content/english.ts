@@ -2,7 +2,7 @@
 // and is exported only after the same confidentiality checks as Korean copy.
 export const english: Record<string, string> = {
   '소개': 'About', '프로젝트': 'Projects', '팀': 'Teams', '소식': 'News', '모집': 'Join us', '문의': 'Contact',
-  '길한겸': 'Gil Hangyum', '정우진': 'Jung Woojin', '대표': 'President', '부대표': 'Vice President',
+  '길한겸': 'Hangyum Gil', '정우진': 'Woojin Jung', '대표': 'President', '부대표': 'Vice President',
   '온 우주를 탐구하다': 'Explore the universe', '아리온': 'ARION',
   'DGIST 최초, 로켓을 직접 설계하고 발사하는 항공우주 동아리': "DGIST's first rocket club, designing, building and launching our own rockets",
   '대구경북과학기술원(DGIST)': 'Daegu Gyeongbuk Institute of Science and Technology (DGIST)',
