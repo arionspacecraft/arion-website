@@ -194,23 +194,53 @@ describe('scroll flight behavior', () => {
     expect(updatedProgress).toBeGreaterThan(0.25)
   })
 
-  it('caps scroll-event rendering and caches gap measurements until reflow', () => {
+  it.each([60, 120, 144])('keeps up with a %iHz display and caches gap measurements until reflow', refreshRate => {
     const page = mount(true)
     vi.spyOn(page, 'getBoundingClientRect').mockReturnValue({ top: -2000, bottom: 3000 } as DOMRect)
     const gap = container.querySelector('.journey__window')!
     const measure = vi.spyOn(gap, 'getBoundingClientRect')
     step(100)
     const before = renderer.draw.mock.calls.length
-    for (let i = 1; i <= 60; i++) {
+    const initialTime = renderer.draw.mock.lastCall![1] as number
+    for (let i = 1; i <= refreshRate * 2; i++) {
       act(() => window.dispatchEvent(new Event('scroll')))
-      step(100 + i * 1000 / 60)
+      // Browser timestamps can round just below an exact frame boundary.
+      step(Math.round((100 + i * 1000 / refreshRate) * 10) / 10)
     }
-    expect(renderer.draw.mock.calls.length - before).toBeGreaterThan(15)
-    expect(renderer.draw.mock.calls.length - before).toBeLessThanOrEqual(30)
+    expect(renderer.draw.mock.calls.length - before).toBe(refreshRate * 2)
+    expect((renderer.draw.mock.lastCall![1] as number) - initialTime).toBeCloseTo(2, 5)
     expect(measure).toHaveBeenCalledTimes(1)
     act(() => resized())
-    step(1200)
+    step(2200)
     expect(measure).toHaveBeenCalledTimes(2)
+  })
+
+  it('limits a 240Hz display to 144fps without losing elapsed time or introducing long frame gaps', () => {
+    const page = mount()
+    vi.spyOn(page, 'getBoundingClientRect').mockReturnValue({ top: 85, bottom: 5085 } as DOMRect)
+    step(100)
+    const initialTime = renderer.draw.mock.lastCall![1] as number
+    const renderedAt = [100]
+    for (let i = 1; i <= 480; i++) {
+      const now = Math.round((100 + i * 1000 / 240) * 10) / 10
+      const before = renderer.draw.mock.calls.length
+      act(() => {
+        window.dispatchEvent(new Event('scroll'))
+        window.dispatchEvent(new Event('scroll'))
+      })
+      step(now)
+      const count = renderer.draw.mock.calls.length - before
+      expect(count).toBeLessThanOrEqual(1)
+      if (count) renderedAt.push(now)
+    }
+    expect(renderedAt.length - 1).toBeGreaterThanOrEqual(287)
+    expect(renderedAt.length - 1).toBeLessThanOrEqual(289)
+    const intervals = renderedAt.slice(1).map((now, index) => now - renderedAt[index])
+    // A 144fps cadence on 240Hz needs a mix of one and two display refreshes.
+    expect(Math.min(...intervals)).toBeGreaterThanOrEqual(1000 / 240 - 0.2)
+    expect(Math.max(...intervals)).toBeLessThanOrEqual(2000 / 240 + 0.2)
+    const elapsed = (renderedAt[renderedAt.length - 1] - renderedAt[0]) / 1000
+    expect((renderer.draw.mock.lastCall![1] as number) - initialTime).toBeCloseTo(elapsed, 5)
   })
 
   it('reacts over the scene but releases particles when the pointer moves onto navigation', () => {

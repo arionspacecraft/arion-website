@@ -337,7 +337,8 @@ export function createFlightRenderer(canvas: HTMLCanvasElement, ctx: CanvasRende
     draw(progress: number, time: number, mouse: Vector, frozen: boolean) {
       light = getTheme() === 'light'
       labelDt = time - lastTime
-      pointer = mouse; paused = frozen; step = clamp((time - lastTime) * 30, 0.5, 3); lastTime = time; labels = []
+      // Scale the original 30 Hz damping by elapsed time, including high-refresh frames.
+      pointer = mouse; paused = frozen; step = clamp((time - lastTime) * 30, 0, 3); lastTime = time; labels = []
       solarLabelsActive = progress >= 0.38 && progress <= 0.58
       if (!solarLabelsActive) solarLabelLayout.reset()
       ctx.globalAlpha = 1; ctx.clearRect(0, 0, width, height)

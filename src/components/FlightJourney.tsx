@@ -8,6 +8,10 @@ import type { FlightStop } from '../lib/flightJourney'
 import { createFlightRenderer } from './particleUniverse'
 import { useMotion } from './Motion'
 
+const FRAME_INTERVAL = 1000 / 144
+// rAF timestamps can be rounded slightly below a display's frame boundary.
+const FRAME_TOLERANCE = 0.25
+
 function measureStops(page: HTMLElement, viewport: HTMLElement): FlightStop[] {
   const pageTop = page.getBoundingClientRect().top
   const height = viewport.offsetHeight
@@ -48,6 +52,7 @@ export default function FlightJourney() {
     const renderer = createFlightRenderer(canvas, context, () => document.documentElement.dataset.theme === 'light' ? 'light' : 'dark')
     let frame = 0
     let previous = 0
+    let nextRenderAt = 0
     let time = 0
     let progress = 0
     let firstFrame = true
@@ -85,10 +90,15 @@ export default function FlightJourney() {
     const tick = (now: number) => {
       frame = 0
       if (disposed || document.hidden || !visible) return
-      if (now - previous >= 1000 / 30 || firstFrame || (motionRef.current && dirty)) {
+      if (now + FRAME_TOLERANCE >= nextRenderAt || firstFrame || (motionRef.current && dirty)) {
         const delta = Math.min((now - previous) / 1000, 0.1)
         if (!motionRef.current) time += delta
         previous = now
+        // Keep the render deadline on its original cadence instead of throwing
+        // away the remainder on every draw. Animation time uses the actual dt.
+        nextRenderAt = firstFrame || motionRef.current
+          ? now + FRAME_INTERVAL
+          : nextRenderAt + (Math.max(0, Math.floor((now + FRAME_TOLERANCE - nextRenderAt) / FRAME_INTERVAL)) + 1) * FRAME_INTERVAL
         readScroll(delta)
       }
       if (!motionRef.current) frame = requestAnimationFrame(tick)
