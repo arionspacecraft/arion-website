@@ -8,7 +8,7 @@ export function ease(from: number, to: number, value: number) {
 
 export const flightStages = [
   { id: 'launch', position: 0, number: '01', label: 'IGNITION', en: 'MISSION / ARION', title: '우주를 향한 도전', description: '스크롤을 내려, 우리의 비행을 시작하세요.' },
-  { id: 'earth', position: 0.22, number: '02', label: 'EARTH + MOON', en: 'EARTH–MOON SYSTEM', title: 'LEAVE\nTHE BLUE.', description: '우리의 시작점을 뒤로하고,\n아직 닿지 않은 곳을 향해.' },
+  { id: 'earth', position: 0.22, number: '02', label: 'EARTH', en: 'EARTH–MOON SYSTEM', title: 'LEAVE\nTHE BLUE.', description: '우리의 시작점을 뒤로하고,\n아직 닿지 않은 곳을 향해.' },
   { id: 'solar', position: 0.43, number: '03', label: 'SOLAR SYSTEM', en: 'OUR STELLAR NEIGHBOURHOOD', title: 'CHASE\nTHE LIGHT.', description: '여덟 개의 궤도와 하나의 태양.\n비행은 계속됩니다.' },
   { id: 'galaxy', position: 0.65, number: '04', label: 'MILKY WAY', en: 'THE MILKY WAY / GALACTIC ATLAS', title: 'INTO\nTHE STARDUST.', description: '별과 성운, 성단 사이로.\n태양계마저 하나의 빛이 되는 곳.' },
   { id: 'local', position: 0.83, number: '05', label: 'LOCAL GROUP', en: 'BEYOND OUR HOME GALAXY', title: 'NO FINAL\nFRONTIER.', description: '우리 은하를 벗어나 이웃 은하들로.\n더 넓은 우주가 모습을 드러냅니다.' },

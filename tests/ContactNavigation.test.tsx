@@ -30,16 +30,24 @@ afterEach(() => {
 })
 
 const mount = (path: string) => act(() => root.render(<MemoryRouter initialEntries={[path]}><App /></MemoryRouter>))
-const contactToggle = () => container.querySelector<HTMLButtonElement>('.contact-menu__trigger')!
+const contactLink = () => container.querySelector<HTMLAnchorElement>('.contact-menu__trigger')!
+const contactToggle = () => container.querySelector<HTMLButtonElement>('.contact-menu .nav-menu__toggle')!
 const mobileToggle = () => container.querySelector<HTMLButtonElement>('.header__toggle')!
 const submenu = () => container.querySelector<HTMLDivElement>('#contact-submenu')!
 
-it('keeps direct contact and Q&A on separate pages with active secondary navigation', () => {
-  mount('/contact')
+it('puts Q&A first while keeping direct contact reachable and both pages active in the contact group', () => {
+  mount('/qna')
+  expect([...container.querySelectorAll('.contact-nav a')].map(link => link.getAttribute('href'))).toEqual(['/qna', '/contact'])
+  expect([...submenu().querySelectorAll('a')].map(link => link.getAttribute('href'))).toEqual(['/qna', '/contact'])
+  expect(container.querySelectorAll('.footer__nav a[href="/qna"]')).toHaveLength(1)
+  expect(container.querySelector('.footer__nav a[href="/contact"]')?.textContent).toContain('직접 문의')
+
+  act(() => container.querySelector<HTMLAnchorElement>('.contact-nav a[href="/contact"]')!.click())
   expect(container.querySelector('h1')?.textContent).toBe('직접 문의')
   expect(container.querySelector('.contact-people')).not.toBeNull()
   expect(container.querySelector('#qna')).toBeNull()
   expect(container.querySelector('.contact-nav a[aria-current="page"]')?.getAttribute('href')).toBe('/contact')
+  expect(contactLink().classList.contains('active')).toBe(true)
 
   act(() => container.querySelector<HTMLAnchorElement>('.contact-nav a[href="/qna"]')!.click())
   expect(container.querySelector('h1')?.textContent).toBe('Q&A')
@@ -54,9 +62,10 @@ it('opens the contact dropdown and closes it after navigating to Q&A', () => {
   mount('/about')
   expect(submenu().hidden).toBe(true)
   expect(container.querySelectorAll('.contact-menu > button')).toHaveLength(1)
-  expect(container.querySelector('.contact-menu > a')).toBeNull()
-  expect(contactToggle().textContent).not.toContain('⌄')
-  act(() => contactToggle().click())
+  expect(contactLink().getAttribute('href')).toBe('/qna')
+  expect(contactLink().getAttribute('aria-label')).toBeNull()
+  expect(contactLink().textContent).not.toContain('⌄')
+  pointer(contactLink(), 'pointerover', 'mouse', document.body)
   expect(contactToggle().getAttribute('aria-expanded')).toBe('true')
   expect(submenu().hidden).toBe(false)
   act(() => submenu().querySelector<HTMLAnchorElement>('a[href="/qna"]')!.click())
@@ -66,6 +75,7 @@ it('opens the contact dropdown and closes it after navigating to Q&A', () => {
 })
 
 it('closes the nested menu first on Escape and preserves mobile menu focus behavior', () => {
+  desktopHover = false
   mount('/contact')
   act(() => mobileToggle().click())
   act(() => contactToggle().click())
@@ -73,7 +83,7 @@ it('closes the nested menu first on Escape and preserves mobile menu focus behav
   act(() => document.dispatchEvent(new KeyboardEvent('keydown', { key: 'Escape', bubbles: true })))
   expect(submenu().hidden).toBe(true)
   expect(mobileToggle().getAttribute('aria-expanded')).toBe('true')
-  expect(document.activeElement).toBe(contactToggle())
+  expect(document.activeElement).toBe(contactLink())
   act(() => document.dispatchEvent(new KeyboardEvent('keydown', { key: 'Escape', bubbles: true })))
   expect(mobileToggle().getAttribute('aria-expanded')).toBe('false')
   expect(document.activeElement).toBe(mobileToggle())
@@ -85,7 +95,7 @@ it('closes dropdown on outside pointer interaction or when keyboard focus leaves
   act(() => document.body.dispatchEvent(new Event('pointerdown', { bubbles: true })))
   expect(submenu().hidden).toBe(true)
 
-  act(() => { contactToggle().focus(); contactToggle().click() })
+  act(() => contactLink().focus())
   act(() => container.querySelector<HTMLButtonElement>('.language-toggle')!.focus())
   expect(submenu().hidden).toBe(true)
 })
@@ -98,7 +108,7 @@ function pointer(target: Element, type: string, pointerType: 'mouse' | 'touch', 
 
 it('opens immediately on mouse hover, stays open inside the submenu, and closes on leaving the group', () => {
   mount('/about')
-  const parent = container.querySelector<HTMLButtonElement>('.contact-menu > .contact-menu__trigger')!
+  const parent = contactLink()
   pointer(parent, 'pointerover', 'mouse', document.body)
   expect(submenu().hidden).toBe(false)
   expect(contactToggle().getAttribute('aria-expanded')).toBe('true')
@@ -113,20 +123,23 @@ it('opens immediately on mouse hover, stays open inside the submenu, and closes 
   expect(contactToggle().getAttribute('aria-expanded')).toBe('false')
 })
 
-it('opens on keyboard focus and stays closed when Escape returns focus to the toggle', () => {
+it('opens on keyboard focus and stays closed when Escape returns focus to the parent link', () => {
   mount('/about')
-  const parent = container.querySelector<HTMLButtonElement>('.contact-menu > .contact-menu__trigger')!
+  const parent = contactLink()
   act(() => document.dispatchEvent(new KeyboardEvent('keydown', { key: 'Tab', bubbles: true })))
   act(() => parent.focus())
   expect(submenu().hidden).toBe(false)
   act(() => submenu().querySelector<HTMLAnchorElement>('a[href="/qna"]')!.focus())
   act(() => document.dispatchEvent(new KeyboardEvent('keydown', { key: 'Escape', bubbles: true })))
-  expect(document.activeElement).toBe(contactToggle())
+  expect(document.activeElement).toBe(contactLink())
   expect(submenu().hidden).toBe(true)
 })
 
-it('does not pre-open on a touch pointer before the click toggles the dropdown', () => {
+it('does not pre-open on a touch pointer before the separate mobile button toggles the dropdown', () => {
+  desktopHover = false
   mount('/about')
+  act(() => mobileToggle().click())
+  expect(contactToggle().getAttribute('aria-label')).toBe('문의 메뉴 열기')
   pointer(contactToggle(), 'pointerover', 'touch', document.body)
   expect(submenu().hidden).toBe(true)
   pointer(contactToggle(), 'pointerdown', 'touch')
@@ -135,6 +148,7 @@ it('does not pre-open on a touch pointer before the click toggles the dropdown',
   pointer(contactToggle(), 'pointerup', 'touch')
   act(() => contactToggle().click())
   expect(submenu().hidden).toBe(false)
+  expect(contactToggle().getAttribute('aria-label')).toBe('문의 메뉴 닫기')
   act(() => contactToggle().click())
   expect(submenu().hidden).toBe(true)
 })

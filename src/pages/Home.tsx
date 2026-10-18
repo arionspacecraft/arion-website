@@ -56,7 +56,7 @@ export default function Home() {
         <p className="section__description">{t(home.teams.description)}</p>
         <div className="team-deck">
           {teams.map((team, index) => (
-            <Link className="team-module" to="/teams" key={team.nameEn}>
+            <Link className="team-module" to={`/teams/${team.slug}`} key={team.slug}>
               <div className="team-module__top"><span className="mono">DIVISION / 0{index + 1}</span><span aria-hidden="true">↗</span></div>
               <h3>{t(team.name)}</h3><span className="team-module__en">{team.nameEn}</span>
               <p>{t(team.summary)}</p>

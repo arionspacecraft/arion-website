@@ -43,8 +43,8 @@
 :root[data-theme='light'] .language-toggle:hover { background: var(--day-tint); color: var(--day-deep); }
 :root[data-theme='light'] .nav__index { color: var(--day-copper); }
 
-:root[data-theme='light'] .contact-menu__links a:hover,
-:root[data-theme='light'] .contact-menu__links a:focus-visible { background: var(--day-tint); }
+:root[data-theme='light'] .nav-menu__links a:hover,
+:root[data-theme='light'] .nav-menu__links a:focus-visible { background: var(--day-tint); }
 
 /* Daylight content uses warm neutrals; color signals navigation or status. */
 :root[data-theme='light'] .eyebrow { color: var(--day-copper); }
@@ -64,7 +64,8 @@
 :root[data-theme='light'] .badge--active::before { background: #287e6b; }
 :root[data-theme='light'] .badge--accent { color: #fffefa; background: var(--day-deep); border-color: var(--day-deep); }
 :root[data-theme='light'] .tab { color: #425e62; border-color: #a9bdb4; }
-:root[data-theme='light'] .tab[aria-pressed='true'] { color: #fffefa; background: var(--day-deep); border-color: var(--day-deep); }
+:root[data-theme='light'] .tab[aria-pressed='true'],
+:root[data-theme='light'] .tab[aria-current='page'] { color: #fffefa; background: var(--day-deep); border-color: var(--day-deep); }
 :root[data-theme='light'] .project-card { background: var(--color-surface); }
 :root[data-theme='light'] .card--link:hover { border-color: #658d80; box-shadow: 0 12px 30px #263f3810; }
 :root[data-theme='light'] .project-card__link,

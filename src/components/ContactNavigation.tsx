@@ -6,8 +6,10 @@ export default function ContactNavigation() {
   return (
     <nav className="contact-nav" aria-label={t('문의 바로가기')}>
       <div className="container">
-        <NavLink to="/contact">{t('직접 문의')}</NavLink>
-        <NavLink to="/qna">Q&A</NavLink>
+        <div className="tabs">
+          <NavLink to="/qna" className="tab">Q&A</NavLink>
+          <NavLink to="/contact" className="tab">{t('직접 문의')}</NavLink>
+        </div>
       </div>
     </nav>
   )

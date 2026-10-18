@@ -178,7 +178,7 @@ export default function FlightJourney() {
         {!canvasAvailable && <div className="journey__fallback"><img src={`${import.meta.env.BASE_URL}rocket-icon.svg`} alt="" /></div>}
       </div>
       <section className={`journey${!canvasAvailable ? ' journey--fallback' : ''}`} ref={sectionRef} aria-label={t("ARION 우주 비행")}>
-        <div className="journey__topline"><span className="mono">ARION / THE COSMIC ODYSSEY</span><span className="mono">SCROLL TO EXPLORE ↘</span></div>
+        <div className="journey__topline"><span className="mono">ARION / THE COSMIC ODYSSEY</span><a className="mono journey__explore" href="#mission">SCROLL TO EXPLORE <span aria-hidden="true">↘</span></a></div>
         <div className="journey__intro" data-flight-ui>
           <p className="launch__eyebrow"><span /> {t(home.hero.label)} / EST. {site.founded}</p>
           <h1>{t(home.hero.first)}<br /><span>{t(home.hero.second)}</span></h1>

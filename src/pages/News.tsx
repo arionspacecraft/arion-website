@@ -1,24 +1,24 @@
 import { useLanguage } from '../lib/language'
-import { useState } from 'react'
 import FilterTabs from '../components/FilterTabs'
 import NewsItem from '../components/NewsItem'
 import PageHeader from '../components/PageHeader'
 import Section from '../components/Section'
-import { newsCategories, sortedNews } from '../content/news'
-import type { NewsCategory } from '../content/news'
+import { sortedNews } from '../content/news'
+import { newsCategoryFilters } from '../content/navigationFilters'
+import { useQueryFilter } from '../lib/useQueryFilter'
 import { usePageTitle } from '../lib/usePageTitle'
 
 export default function News() {
   const { t } = useLanguage()
   usePageTitle('소식')
-  const [category, setCategory] = useState<NewsCategory | null>(null)
+  const [category, setCategory] = useQueryFilter('category', newsCategoryFilters)
   const shown = category ? sortedNews.filter((p) => p.category === category) : sortedNews
 
   return (
     <>
       <PageHeader eyebrow="News" title={t("소식")} lead="공지와 활동 기록" />
       <Section>
-        <FilterTabs options={newsCategories} value={category} onChange={setCategory} />
+        <FilterTabs options={newsCategoryFilters.map(option => option.value)} value={category} onChange={setCategory} />
         {shown.length > 0 ? (
           <ul className="news-list">
             {shown.map((post) => (

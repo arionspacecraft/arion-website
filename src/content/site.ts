@@ -23,5 +23,5 @@ export const nav = [
   { to: '/teams', label: '팀' },
   { to: '/news', label: '소식' },
   { to: '/recruit', label: '모집' },
-  { to: '/contact', label: '문의' },
+  { to: '/qna', label: '문의' },
 ]
