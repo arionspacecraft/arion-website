@@ -11,6 +11,7 @@ import News from './pages/News'
 import NewsDetail from './pages/NewsDetail'
 import Recruit from './pages/Recruit'
 import Contact from './pages/Contact'
+import Qna from './pages/Qna'
 import NotFound from './pages/NotFound'
 
 export default function App() {
@@ -28,6 +29,7 @@ export default function App() {
         <Route path="news/:slug" element={<NewsDetail />} />
         <Route path="recruit" element={<Recruit />} />
         <Route path="contact" element={<Contact />} />
+        <Route path="qna" element={<Qna />} />
         <Route path="*" element={<NotFound />} />
       </Route>
     </Routes>

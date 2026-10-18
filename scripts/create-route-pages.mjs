@@ -9,7 +9,7 @@ import { news } from '../src/content/news.ts'
 const output = fileURLToPath(new URL('../dist/', import.meta.url))
 const html = await readFile(join(output, 'index.html'), 'utf8')
 const routes = [
-  'about', 'projects', 'teams', 'news', 'recruit', 'contact',
+  'about', 'projects', 'teams', 'news', 'recruit', 'contact', 'qna',
   ...projects.map(({ slug }) => `projects/${slug}`),
   ...news.map(({ slug }) => `news/${slug}`),
 ]
