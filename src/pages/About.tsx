@@ -5,7 +5,7 @@ import { activities, concept, history, vision } from '../content/about'
 import { usePageTitle } from '../lib/usePageTitle'
 
 export default function About() {
-  const { t } = useLanguage()
+  const { t, language } = useLanguage()
   usePageTitle('소개')
 
   return (
@@ -14,13 +14,29 @@ export default function About() {
 
       <Section eyebrow="Concept" title={concept.title}>
         <dl className="concept">
-          {concept.parts.map((part) => (
+          {concept.parts.map((part, index) => (
             <div key={part.word}>
-              <dt>{t(part.word)}</dt>
+              <dt>
+                {index > 0 && <span className="concept__plus" aria-hidden="true">+</span>}
+                {t(part.word)}
+              </dt>
               <dd>{t(part.meaning)}</dd>
             </div>
           ))}
         </dl>
+        <div className="concept-copy">
+          {language === 'ko' ? (
+            <>
+              <p>우주를 뜻하는 아라와 모든것을 뜻하는 온을 합쳐</p>
+              <p className="concept-copy__meaning"><strong>우주를 향한 <span className="concept-copy__accent">도전</span></strong><span className="concept-copy__suffix">이라는 의미를 담았습니다.</span></p>
+            </>
+          ) : (
+            <>
+              <p>By combining ARA, meaning the universe, with ON, meaning everything,</p>
+              <p className="concept-copy__meaning">we express our <strong><span className="concept-copy__accent">challenge</span> to reach space</strong>.</p>
+            </>
+          )}
+        </div>
       </Section>
 
       <Section eyebrow="Vision" title={vision.title}>
