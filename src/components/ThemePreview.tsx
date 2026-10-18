@@ -16,16 +16,29 @@ export default function ThemePreview() {
   useEffect(() => {
     const media = window.matchMedia('(prefers-color-scheme: dark)')
     const update = () => setSystemDark(media.matches)
+    const resume = () => { if (!document.hidden) update() }
     update()
-    media.addEventListener('change', update)
-    return () => media.removeEventListener('change', update)
+    // Mobile browsers can suspend the page while the device theme is changed.
+    // Reconcile it on return as well as listening for the live media event.
+    if (media.addEventListener) media.addEventListener('change', update)
+    else media.addListener(update)
+    document.addEventListener('visibilitychange', resume)
+    window.addEventListener('pageshow', update)
+    window.addEventListener('focus', update)
+    return () => {
+      if (media.removeEventListener) media.removeEventListener('change', update)
+      else media.removeListener(update)
+      document.removeEventListener('visibilitychange', resume)
+      window.removeEventListener('pageshow', update)
+      window.removeEventListener('focus', update)
+    }
   }, [])
   const theme = mode === 'system' ? (systemDark ? 'dark' : 'light') : mode
   useLayoutEffect(() => {
     const html = document.documentElement
     html.dataset.theme = theme
     const meta = document.querySelector<HTMLMetaElement>('meta[name="theme-color"]')
-    if (meta) meta.content = theme === 'dark' ? '#030627' : '#f6f8fd'
+    if (meta) meta.content = theme === 'dark' ? '#030627' : '#ffffff'
   }, [theme])
 
   if (!import.meta.env.DEV) return null

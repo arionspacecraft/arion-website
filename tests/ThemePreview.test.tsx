@@ -2,6 +2,8 @@
 import { act } from 'react'
 import { createRoot } from 'react-dom/client'
 import { afterEach, beforeEach, expect, it, vi } from 'vitest'
+import { readFileSync } from 'node:fs'
+import { runInNewContext } from 'node:vm'
 import ThemePreview from '../src/components/ThemePreview'
 import { createFlightRenderer } from '../src/components/particleUniverse'
 
@@ -51,6 +53,45 @@ it('allows a local override and returns to the latest OS preference', () => {
   expect(document.documentElement.dataset.theme).toBe('dark')
 })
 
+it.each(['visibilitychange', 'pageshow', 'focus'])('resyncs after a missed media event on %s', event => {
+  act(() => root.render(<ThemePreview />))
+  dark = true // The page was suspended; no matchMedia change callback arrived.
+  act(() => (event === 'visibilitychange' ? document : window).dispatchEvent(new Event(event)))
+  expect(document.documentElement.dataset.theme).toBe('dark')
+  dark = false
+  act(() => (event === 'visibilitychange' ? document : window).dispatchEvent(new Event(event)))
+  expect(document.documentElement.dataset.theme).toBe('light')
+})
+
+it('supports the legacy media listener used by older mobile browsers', () => {
+  const removeListener = vi.fn()
+  vi.stubGlobal('matchMedia', () => ({
+    get matches() { return dark },
+    addListener: (listener: () => void) => { changed = listener },
+    removeListener,
+  }))
+  act(() => root.render(<ThemePreview />))
+  act(() => { dark = true; changed() })
+  expect(document.documentElement.dataset.theme).toBe('dark')
+  act(() => root.unmount())
+  expect(removeListener).toHaveBeenCalledWith(changed)
+})
+
+it.each([true, false])('initializes the device theme before React mounts (%s)', initial => {
+  dark = initial
+  const meta = document.createElement('meta')
+  meta.name = 'theme-color'; document.head.append(meta)
+  const html = readFileSync('index.html', 'utf8')
+  const bootstrap = html.match(/<script>([\s\S]*?)<\/script>/)?.[1]
+  expect(bootstrap).toBeTruthy()
+  runInNewContext(bootstrap!, { window, document })
+  expect(container.childElementCount).toBe(0)
+  expect(document.documentElement.dataset.theme).toBe(initial ? 'dark' : 'light')
+  expect(meta.content).toBe(initial ? '#030627' : '#ffffff')
+  act(() => root.render(<ThemePreview />))
+  expect(document.documentElement.dataset.theme).toBe(initial ? 'dark' : 'light')
+})
+
 it.each([true, false])('production follows the device (%s), ignores preview URLs and hides controls', initial => {
   vi.stubEnv('DEV', false)
   dark = initial
@@ -60,10 +101,10 @@ it.each([true, false])('production follows the device (%s), ignores preview URLs
   act(() => root.render(<ThemePreview />))
   expect(container.childElementCount).toBe(0)
   expect(document.documentElement.dataset.theme).toBe(initial ? 'dark' : 'light')
-  expect(meta.content).toBe(initial ? '#030627' : '#f6f8fd')
+  expect(meta.content).toBe(initial ? '#030627' : '#ffffff')
   act(() => { dark = !initial; changed() })
   expect(document.documentElement.dataset.theme).toBe(initial ? 'light' : 'dark')
-  expect(meta.content).toBe(initial ? '#f6f8fd' : '#030627')
+  expect(meta.content).toBe(initial ? '#ffffff' : '#030627')
 })
 
 it('recolors the paused canvas without changing celestial or label positions', () => {
@@ -89,7 +130,7 @@ it('recolors the paused canvas without changing celestial or label positions', (
   expect(stops).toContain('#030627')
   expect(night.find(text => text.value === 'EARTH')?.color).toBe('#e4efff')
   theme = 'light'; stops.length = 0; draw()
-  expect(stops).toContain('#d5e3fb')
-  expect(texts.find(text => text.value === 'EARTH')?.color).toBe('#16284b')
+  expect(stops).toContain('#ffffff')
+  expect(texts.find(text => text.value === 'EARTH')?.color).toBe('#1c3b64')
   expect(texts.map(({ value, x, y }) => ({ value, x, y }))).toEqual(night.map(({ value, x, y }) => ({ value, x, y })))
 })

@@ -68,7 +68,7 @@
   .journey__topline .mono { font-size: 10px; }
   .journey__topline > :last-child { display: none; }
   .journey__hero-note { font-size: 10px; bottom: 92px; }
-  .journey__status { left: 16px; right: 16px; bottom: 12px; }
+  .journey__status { left: 16px; right: 16px; bottom: calc(12px + env(safe-area-inset-bottom, 0px)); }
   .journey__atlas { flex: 1; }
   .journey__atlas summary { gap: 10px; font-size: 13px; padding: 12px; }
   .journey__atlas summary > :last-child { margin-left: auto; }

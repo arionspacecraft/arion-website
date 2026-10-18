@@ -5,6 +5,18 @@
     <link rel="icon" type="image/svg+xml" sizes="any" href="/rocket-icon.svg" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <meta name="theme-color" content="#030627" />
+    <style>
+      html { background: #030627; color-scheme: dark; }
+      html[data-theme='light'] { background: #ffffff; color-scheme: light; }
+    </style>
+    <script>
+      // Set the device theme before styles or React paint the first frame.
+      (() => {
+        const dark = window.matchMedia('(prefers-color-scheme: dark)').matches
+        document.documentElement.dataset.theme = dark ? 'dark' : 'light'
+        document.querySelector('meta[name="theme-color"]').content = dark ? '#030627' : '#ffffff'
+      })()
+    </script>
     <link rel="preconnect" href="https://fonts.googleapis.com" />
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
     <link href="https://fonts.googleapis.com/css2?family=Inter+Tight:wght@400;500;600&family=Instrument+Serif:ital@0;1&display=swap" rel="stylesheet" />

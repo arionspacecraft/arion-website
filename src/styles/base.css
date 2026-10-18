@@ -188,11 +188,12 @@ html:has(.motion-paused) { scroll-behavior: auto; }
   .header__inner { min-height: 72px; }
   .header__logo { width: 100px; height: 33px; }
   .header__toggle { display: block; }
-  .nav { display: none; position: absolute; top: 72px; left: 0; right: 0; padding: 25px; background: #080b19; border-bottom: 1px solid #343b57; flex-direction: column; gap: 0; box-shadow: 0 20px 40px #0006; }
+  .nav { display: none; position: absolute; top: 100%; left: 0; right: 0; padding: 25px; background: #080b19; border-bottom: 1px solid #343b57; flex-direction: column; gap: 0; box-shadow: 0 20px 40px #0006; max-height: calc(100svh - 73px); max-height: calc(100dvh - 73px); overflow-y: auto; overscroll-behavior: contain; }
   .nav--open { display: flex; }
   .nav__link { font-size: 21px; padding: 17px 10px; border-bottom: 1px solid #ffffff10; }
   .nav__link::after { display: none; }
   .nav__index { display: inline-block; margin-right: 25px; color: #a1acce; }
+  .header__toggle, .motion-toggle { min-width: 44px; min-height: 44px; }
   .header__join { font-size: 9px; gap: 20px; padding: 8px 15px; }
   .mission__layout { grid-template-columns: 1fr; gap: 20px; }
   .mission__layout > div:first-child { display: flex; align-items: center; justify-content: space-between; }
