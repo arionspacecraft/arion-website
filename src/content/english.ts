@@ -175,6 +175,12 @@ export const english: Record<string, string> = {
   '로그아웃': 'Sign out',
   '운영진 로그인': 'Team sign in',
   '비밀번호': 'Password',
+  '운영진 비밀번호': 'Team password',
+  '관리 화면으로': 'Open management',
+  '운영진 비밀번호를 입력해 주세요.': 'Enter your team password.',
+  '설정한 운영진 비밀번호를 입력하면 관리 화면으로 이동합니다.': 'Enter your team password to open the management page.',
+  '운영진 인증에 실패했습니다. 비밀번호와 연결 상태를 확인한 뒤 다시 시도해 주세요.': 'Could not verify your team account. Check your password and connection, then try again.',
+  '운영진 인증이 필요합니다. Q&A의 질문 작성란에서 인증해 주세요.': 'Team authentication is required. Please authenticate through the Q&A question form.',
   '로그인 중…': 'Signing in…',
   '로그인': 'Sign in',
   // Provisional team detail copy.

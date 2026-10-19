@@ -1,9 +1,9 @@
 import { useEffect, useRef, useState } from 'react'
 import type { FormEvent } from 'react'
-import { Link, useNavigate } from 'react-router-dom'
+import { useNavigate } from 'react-router-dom'
 import Section from './Section'
 import { useLanguage } from '../lib/language'
-import { QNA_PAGE_SIZE, isAdminShortcut, qnaError } from '../lib/qna'
+import { QNA_PAGE_SIZE, QNA_STAFF_EMAIL, isStaffIdentity, qnaError } from '../lib/qna'
 import type { PublicQuestion, QnaApi, QuestionDraft, QuestionPage } from '../lib/qna'
 
 const emptyDraft: QuestionDraft = { name: '', phone: '', email: '', title: '', body: '' }
@@ -20,6 +20,9 @@ export default function LiveQnaBoard({ api }: { api: QnaApi }) {
   const [page, setPage] = useState(0)
   const [writing, setWriting] = useState(false)
   const [draft, setDraft] = useState<QuestionDraft>(emptyDraft)
+  // Keep credentials out of the question draft, retry fingerprint and contact payload.
+  const [password, setPassword] = useState('')
+  const staffEntry = isStaffIdentity(draft)
   const [saving, setSaving] = useState(false)
   const [error, setError] = useState('')
   const [status, setStatus] = useState('')
@@ -43,12 +46,27 @@ export default function LiveQnaBoard({ api }: { api: QnaApi }) {
   }, [api, query, page, revision])
 
   function refresh() { setRevision(value => value + 1) }
-  function closeForm() { setWriting(false); setError(''); writeButton.current?.focus() }
+  function closeForm() { setWriting(false); setPassword(''); setError(''); writeButton.current?.focus() }
+  function changeIdentity(field: 'name' | 'phone', value: string) {
+    setPassword(''); setError(''); setDraft({ ...draft, [field]: value })
+  }
 
   async function submit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault()
     if (submitting.current) return
-    if (isAdminShortcut(draft)) { setDraft(emptyDraft); navigate('/qna/admin'); return }
+    if (staffEntry) {
+      if (!password) { setError('운영진 비밀번호를 입력해 주세요.'); return }
+      submitting.current = true
+      setSaving(true); setError(''); setStatus(''); setPassword('')
+      try {
+        await api.signIn(QNA_STAFF_EMAIL, password)
+        setDraft(emptyDraft); request.current = null
+        navigate('/qna/admin')
+      } catch {
+        setError('운영진 인증에 실패했습니다. 비밀번호와 연결 상태를 확인한 뒤 다시 시도해 주세요.')
+      } finally { submitting.current = false; setSaving(false) }
+      return
+    }
     const clean = { name: draft.name.trim(), phone: draft.phone.trim(), email: draft.email.trim(), title: draft.title.trim(), body: draft.body.trim() }
     if (!clean.title || !clean.body) { setError('제목과 내용을 입력해 주세요. 공백만으로는 저장할 수 없습니다.'); return }
     if (clean.title.length > 100 || clean.body.length > 2000) {
@@ -83,18 +101,24 @@ export default function LiveQnaBoard({ api }: { api: QnaApi }) {
       <div className="qna__field">
         <label className="qna__field-label" htmlFor="qna-name">{t('이름 (선택)')}</label>
         <input id="qna-name" className="qna__input" maxLength={80} autoComplete="name" disabled={saving}
-          value={draft.name} onChange={event => setDraft({ ...draft, name: event.target.value })} />
+          value={draft.name} onChange={event => changeIdentity('name', event.target.value)} />
       </div>
       <div className="qna__field">
         <label className="qna__field-label" htmlFor="qna-phone">{t('전화번호 (선택)')}</label>
         <input id="qna-phone" className="qna__input" type="tel" maxLength={30} autoComplete="tel" disabled={saving}
-          value={draft.phone} onChange={event => setDraft({ ...draft, phone: event.target.value })} />
+          value={draft.phone} onChange={event => changeIdentity('phone', event.target.value)} />
       </div>
-      <div className="qna__field qna__field--wide">
+      {staffEntry ? <div key="staff-password" className="qna__field qna__field--wide">
+        <label className="qna__field-label" htmlFor="qna-entry-password">{t('운영진 비밀번호')}</label>
+        <input id="qna-entry-password" className="qna__input" type="password" required autoComplete="current-password" disabled={saving}
+          aria-describedby="qna-entry-notice" value={password} onChange={event => setPassword(event.target.value)} />
+        <p id="qna-entry-notice" className="qna__preview-note" role="status">{t('설정한 운영진 비밀번호를 입력하면 관리 화면으로 이동합니다.')}</p>
+      </div> : <div key="contact-email" className="qna__field qna__field--wide">
         <label className="qna__field-label" htmlFor="qna-contact-email">{t('이메일 (선택)')}</label>
-        <input id="qna-contact-email" className="qna__input" inputMode="email" maxLength={254} autoComplete="email" disabled={saving}
+        <input id="qna-contact-email" className="qna__input" type="email" inputMode="email" maxLength={254} autoComplete="email" disabled={saving}
           value={draft.email} onChange={event => setDraft({ ...draft, email: event.target.value })} />
-      </div>
+      </div>}
+      {!staffEntry && <>
       <div className="qna__field qna__field--wide">
         <label className="qna__field-label" htmlFor="qna-title">{t('질문 제목')}</label>
         <input id="qna-title" className="qna__input" required maxLength={100} placeholder={t('궁금한 내용을 간단히 적어 주세요')} disabled={saving}
@@ -105,10 +129,11 @@ export default function LiveQnaBoard({ api }: { api: QnaApi }) {
         <textarea id="qna-body" className="qna__textarea" required maxLength={2000} rows={6} placeholder={t('질문 내용을 적어 주세요')} disabled={saving}
           value={draft.body} onChange={event => setDraft({ ...draft, body: event.target.value })} />
       </div>
+      </>}
       {error && <p className="qna__status" role="alert">{t(error)}</p>}
       <div className="qna__form-actions">
         <button type="button" className="button" disabled={saving} onClick={closeForm}>{t('취소')}</button>
-        <button type="submit" className="button button--primary" disabled={saving}>{t(saving ? '등록 중…' : '질문 등록')}</button>
+        <button type="submit" className="button button--primary" disabled={saving}>{t(staffEntry ? (saving ? '로그인 중…' : '관리 화면으로') : (saving ? '등록 중…' : '질문 등록'))}</button>
       </div>
     </form>}
     <p className="qna__status" role="status" aria-live="polite">{t(status)}</p>
@@ -134,7 +159,6 @@ export default function LiveQnaBoard({ api }: { api: QnaApi }) {
       <span>{page + 1} / {Math.ceil(result.total / QNA_PAGE_SIZE)}</span>
       <button type="button" className="button" disabled={(page + 1) * QNA_PAGE_SIZE >= result.total} onClick={() => setPage(value => value + 1)}>{t('다음')}</button>
     </nav>}
-    <div className="qna__staff-login"><Link to="/qna/admin">{t('운영진 로그인')}</Link></div>
   </Section>
 }
 

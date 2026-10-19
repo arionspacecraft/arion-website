@@ -16,10 +16,11 @@ export type QuestionPage = { questions: PublicQuestion[]; total: number }
 export type AdminQuestion = PublicQuestion & { name: string; phone: string; email: string; original_title: string; original_body: string; hidden: boolean }
 export type AdminPage = { questions: AdminQuestion[]; total: number }
 export type QueueFilter = 'pending' | 'published' | 'hidden'
-// This is a navigation shortcut, never an authentication secret or permission check.
-export function isAdminShortcut(draft: Pick<QuestionDraft, 'name' | 'phone' | 'email'>): boolean {
+export const QNA_STAFF_EMAIL = 'arionspacecraft@gmail.com'
+// Public contact details select the sign-in form; only server authentication grants access.
+export function isStaffIdentity(draft: Pick<QuestionDraft, 'name' | 'phone'>): boolean {
   const leader = site.contact.leaders.find(person => person.name === '정우진')
-  return !!leader && draft.name.trim() === leader.name && draft.phone.replace(/\D/g, '') === leader.phone.replace(/\D/g, '') && draft.email.trim() === 'arion2026'
+  return !!leader && draft.name.trim() === leader.name && draft.phone.replace(/\D/g, '') === leader.phone.replace(/\D/g, '')
 }
 export interface QnaApi {
   list(query: string, page: number): Promise<QuestionPage>
