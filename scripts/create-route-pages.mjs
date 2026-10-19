@@ -10,7 +10,7 @@ import { teams } from '../src/content/teams.ts'
 const output = fileURLToPath(new URL('../dist/', import.meta.url))
 const html = await readFile(join(output, 'index.html'), 'utf8')
 const routes = [
-  'about', 'projects', 'teams', 'news', 'recruit', 'contact', 'qna',
+  'about', 'projects', 'teams', 'news', 'recruit', 'contact', 'qna', 'qna/admin',
   ...projects.map(({ slug }) => `projects/${slug}`),
   ...teams.map(({ slug }) => `teams/${slug}`),
   ...news.map(({ slug }) => `news/${slug}`),

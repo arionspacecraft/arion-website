@@ -1,5 +1,8 @@
 // @vitest-environment jsdom
 import { act } from 'react'
+import { MemoryRouter, Route, Routes } from 'react-router-dom'
+import QnaAdminBoard from '../src/components/QnaAdminBoard'
+import { site } from '../src/content/site'
 import { createRoot } from 'react-dom/client'
 import { afterEach, beforeEach, expect, it, vi } from 'vitest'
 import LiveQnaBoard from '../src/components/LiveQnaBoard'
@@ -9,21 +12,20 @@ import type { PublicQuestion, QnaApi, QuestionPage } from '../src/lib/qna'
 let container: HTMLDivElement
 let root: ReturnType<typeof createRoot>
 let api: QnaApi
-let staffChanged: (staff: boolean) => void
-const question: PublicQuestion = { id: 'test-question', nickname: '방문자', title: '활동 질문', body: '가입은 어떻게 하나요?', created_at: '2026-10-19T00:00:00Z', answer: null, answered_at: null }
+const question: PublicQuestion = { id: 'test-question', nickname: '방문자', title: '활동 질문', body: '가입은 어떻게 하나요?', created_at: '2026-10-19T00:00:00Z', answer: '운영진 답변', answered_at: '2026-10-19T00:00:00Z' }
 beforeEach(() => {
   vi.stubGlobal('IS_REACT_ACT_ENVIRONMENT', true)
   localStorage.clear()
   container = document.createElement('div'); document.body.append(container); root = createRoot(container)
   api = {
-    list: vi.fn().mockResolvedValue({ questions: [question], total: 1 }),
+    list: vi.fn().mockResolvedValue({ questions: [question], total: 1 }), staffList: vi.fn().mockRejectedValue(new Error('QNA_FORBIDDEN')),
     submit: vi.fn().mockResolvedValue(question.id), answer: vi.fn().mockResolvedValue(undefined), hide: vi.fn().mockResolvedValue(undefined),
     signIn: vi.fn().mockResolvedValue(undefined), signOut: vi.fn().mockResolvedValue(undefined),
-    watchStaff: listener => { staffChanged = listener; listener(false); return () => {} },
+    watchStaff: listener => { listener(false); return () => {} },
   }
 })
 afterEach(() => { act(() => root.unmount()); container.remove(); vi.restoreAllMocks(); vi.unstubAllGlobals() })
-async function mount() { await act(async () => root.render(<LanguageProvider><LiveQnaBoard api={api} /></LanguageProvider>)) }
+async function mount() { await act(async () => root.render(<MemoryRouter><LanguageProvider><Routes><Route path="/" element={<LiveQnaBoard api={api} />} /><Route path="/qna/admin" element={<QnaAdminBoard api={api} />} /></Routes></LanguageProvider></MemoryRouter>)) }
 function button(text: string) { return [...container.querySelectorAll<HTMLButtonElement>('button')].find(item => item.textContent?.includes(text))! }
 async function click(text: string) { await act(async () => button(text).click()) }
 function fill(selector: string, value: string) {
@@ -42,8 +44,8 @@ it('publishes through the server, trims content and never copies local preview r
   await mount(); await click('질문 작성하기')
   fill('#qna-title', '  공개 질문  '); fill('#qna-body', '  질문 내용  ')
   await submit()
-  expect(api.submit).toHaveBeenCalledWith({ nickname: '', title: '공개 질문', body: '질문 내용' }, expect.any(String))
-  expect(container.textContent).toContain('질문이 등록되었습니다.')
+  expect(api.submit).toHaveBeenCalledWith({ name: '', phone: '', email: '', title: '공개 질문', body: '질문 내용' }, expect.any(String))
+  expect(container.textContent).toContain('질문이 접수되었습니다.')
   expect(container.textContent).not.toContain('private draft')
   expect(localStorage.getItem('arion-qna-preview-v1')).toContain('private draft')
   expect(container.querySelector('#qna-write-form')).toBeNull()
@@ -90,46 +92,33 @@ it('ignores stale searches and requests a new page from the server', async () =>
   await click('다음')
   expect(api.list).toHaveBeenLastCalledWith('new', 1)
 })
-it('only shows answer controls after verified staff status and preserves failed answer drafts', async () => {
-  await mount()
-  expect(button('답변 작성')).toBeUndefined()
-  await act(async () => staffChanged(true)); await click('답변 작성')
-  fill(`#answer-${question.id}`, '  답변 초안  ')
-  vi.mocked(api.answer).mockRejectedValueOnce(new Error('QNA_FORBIDDEN'))
-  await submit('.qna__reply-form')
-  expect(container.querySelector<HTMLTextAreaElement>(`#answer-${question.id}`)?.value).toBe('  답변 초안  ')
-  expect(container.textContent).toContain('답변 권한이 없습니다.')
-  await submit('.qna__reply-form')
-  expect(api.answer).toHaveBeenLastCalledWith(question.id, '답변 초안')
-  await act(async () => staffChanged(false))
-  expect(button('답변 작성')).toBeUndefined()
+it('accepts optional private contact details without adding them to the public list', async () => {
+  await mount(); await click('질문 작성하기')
+  fill('#qna-name', '비공개 이름'); fill('#qna-phone', '010-0000-0000'); fill('#qna-contact-email', 'private@example.test')
+  fill('#qna-title', '공개 가능 질문'); fill('#qna-body', '내용'); await submit()
+  expect(api.submit).toHaveBeenCalledWith({ name: '비공개 이름', phone: '010-0000-0000', email: 'private@example.test', title: '공개 가능 질문', body: '내용' }, expect.any(String))
+  expect(container.textContent).not.toContain('private@example.test')
+  expect(container.textContent).toContain('운영진이 답변한 뒤')
 })
-it('requires explicit confirmation before hiding and renders answers as plain text', async () => {
-  vi.mocked(api.list).mockResolvedValue({ questions: [{ ...question, answer: '<script>bad()</script>', answered_at: question.created_at }], total: 1 })
-  await mount(); await act(async () => staffChanged(true))
-  expect(container.querySelector('script')).toBeNull()
-  expect(container.textContent).toContain('<script>bad()</script>')
-  await click('질문 숨기기')
-  expect(api.hide).not.toHaveBeenCalled()
-  await click('숨기기 확인')
-  expect(api.hide).toHaveBeenCalledWith(question.id)
+it('uses the requested shortcut only to navigate, without granting staff access or submitting a question', async () => {
+  await mount(); await click('질문 작성하기')
+  const leader = site.contact.leaders.find(person => person.name === '정우진')!
+  fill('#qna-name', leader.name); fill('#qna-phone', leader.phone.replaceAll('-', '')); fill('#qna-contact-email', 'arion2026')
+  await submit()
+  expect(container.textContent).toContain('Q&A 관리')
+  expect(container.querySelector('#qna-password')).not.toBeNull()
+  expect(api.submit).not.toHaveBeenCalled()
+  expect(api.signIn).not.toHaveBeenCalled()
+  expect(api.staffList).not.toHaveBeenCalled()
 })
-it('keeps an active answer draft through refresh, then starts a new edit from the latest server answer', async () => {
-  await mount(); await act(async () => staffChanged(true)); await click('답변 작성')
-  fill(`#answer-${question.id}`, '작성 중 초안')
-  vi.mocked(api.list).mockResolvedValue({ questions: [{ ...question, answer: '서버의 최신 답변', answered_at: question.created_at }], total: 1 })
-  await click('새로고침')
-  expect(container.querySelector<HTMLTextAreaElement>(`#answer-${question.id}`)?.value).toBe('작성 중 초안')
-  await click('답변 수정'); await click('답변 수정')
-  expect(container.querySelector<HTMLTextAreaElement>(`#answer-${question.id}`)?.value).toBe('서버의 최신 답변')
+it('rejects invalid ordinary email addresses and never treats the shortcut as an email login', async () => {
+  await mount(); await click('질문 작성하기')
+  fill('#qna-title', '제목'); fill('#qna-body', '내용'); fill('#qna-contact-email', 'arion2026'); await submit()
+  expect(api.submit).not.toHaveBeenCalled()
+  expect(api.signIn).not.toHaveBeenCalled()
+  expect(container.querySelector('[role="alert"]')?.textContent).toContain('이메일 형식')
 })
-it('translates live actions to English and clears passwords after failed sign-in', async () => {
-  localStorage.setItem('arion-language', 'en')
-  await mount()
-  expect(container.textContent).toContain('Anyone can ask a question.')
-  fill('#qna-email', 'staff@example.test'); fill('#qna-password', 'do-not-store')
-  vi.mocked(api.signIn).mockRejectedValueOnce(new Error('QNA_FORBIDDEN'))
-  await submit('.qna__login-form')
-  expect(container.querySelector<HTMLInputElement>('#qna-password')?.value).toBe('')
-  expect(container.textContent).toContain('authorized ARION team account')
+it('shows the moderated publication policy in English', async () => {
+  localStorage.setItem('arion-language', 'en'); await mount()
+  expect(container.textContent).toContain('Questions are published only after')
 })

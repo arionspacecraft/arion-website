@@ -1,18 +1,31 @@
 import { createClient } from '@supabase/supabase-js'
 import type { SupabaseClient } from '@supabase/supabase-js'
+import { site } from '../content/site'
 
-export type QuestionDraft = { nickname: string; title: string; body: string }
-export type PublicQuestion = QuestionDraft & {
+export type QuestionDraft = { name: string; phone: string; email: string; title: string; body: string }
+export type PublicQuestion = {
+  title: string
+  body: string
+  nickname: string
   id: string
   created_at: string
   answer: string | null
   answered_at: string | null
 }
 export type QuestionPage = { questions: PublicQuestion[]; total: number }
+export type AdminQuestion = PublicQuestion & { name: string; phone: string; email: string; original_title: string; original_body: string; hidden: boolean }
+export type AdminPage = { questions: AdminQuestion[]; total: number }
+export type QueueFilter = 'pending' | 'published' | 'hidden'
+// This is a navigation shortcut, never an authentication secret or permission check.
+export function isAdminShortcut(draft: Pick<QuestionDraft, 'name' | 'phone' | 'email'>): boolean {
+  const leader = site.contact.leaders.find(person => person.name === '정우진')
+  return !!leader && draft.name.trim() === leader.name && draft.phone.replace(/\D/g, '') === leader.phone.replace(/\D/g, '') && draft.email.trim() === 'arion2026'
+}
 export interface QnaApi {
   list(query: string, page: number): Promise<QuestionPage>
+  staffList(filter: QueueFilter, page: number): Promise<AdminPage>
   submit(draft: QuestionDraft, requestId: string): Promise<string>
-  answer(id: string, body: string): Promise<void>
+  answer(id: string, body: string, title: string, question: string): Promise<void>
   hide(id: string): Promise<void>
   signIn(email: string, password: string): Promise<void>
   signOut(): Promise<void>
@@ -37,6 +50,7 @@ export function createQnaApi(client: SupabaseClient): QnaApi {
   }
   return {
     list: (query, page) => rpc('qna_list', { p_query: query.trim().slice(0, 100), p_page: page }),
+    staffList: (filter, page) => rpc('qna_staff_list', { p_filter: filter, p_page: page }),
     async submit(draft, requestId) {
       const { data, error } = await client.auth.getSession()
       if (error) throw error
@@ -44,9 +58,9 @@ export function createQnaApi(client: SupabaseClient): QnaApi {
         const result = await client.auth.signInAnonymously()
         if (result.error) throw result.error
       }
-      return rpc<string>('qna_submit', { p_nickname: draft.nickname, p_title: draft.title, p_body: draft.body, p_request_id: requestId })
+      return rpc<string>('qna_submit', { p_name: draft.name, p_phone: draft.phone, p_email: draft.email, p_title: draft.title, p_body: draft.body, p_request_id: requestId })
     },
-    async answer(id, body) { await rpc('qna_answer', { p_id: id, p_body: body }) },
+    async answer(id, body, title, question) { await rpc('qna_answer', { p_id: id, p_body: body, p_title: title, p_question: question }) },
     async hide(id) { await rpc('qna_hide', { p_id: id }) },
     async signIn(email, password) {
       const { error } = await client.auth.signInWithPassword({ email: email.trim(), password })

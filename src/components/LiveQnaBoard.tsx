@@ -1,14 +1,16 @@
 import { useEffect, useRef, useState } from 'react'
 import type { FormEvent } from 'react'
+import { Link, useNavigate } from 'react-router-dom'
 import Section from './Section'
 import { useLanguage } from '../lib/language'
-import { QNA_PAGE_SIZE, qnaError } from '../lib/qna'
+import { QNA_PAGE_SIZE, isAdminShortcut, qnaError } from '../lib/qna'
 import type { PublicQuestion, QnaApi, QuestionDraft, QuestionPage } from '../lib/qna'
 
-const emptyDraft: QuestionDraft = { nickname: '', title: '', body: '' }
+const emptyDraft: QuestionDraft = { name: '', phone: '', email: '', title: '', body: '' }
 
 export default function LiveQnaBoard({ api }: { api: QnaApi }) {
   const { t } = useLanguage()
+  const navigate = useNavigate()
   const [result, setResult] = useState<QuestionPage>({ questions: [], total: 0 })
   const [loading, setLoading] = useState(true)
   const [loadError, setLoadError] = useState(false)
@@ -16,7 +18,6 @@ export default function LiveQnaBoard({ api }: { api: QnaApi }) {
   const [search, setSearch] = useState('')
   const [query, setQuery] = useState('')
   const [page, setPage] = useState(0)
-  const [staff, setStaff] = useState(false)
   const [writing, setWriting] = useState(false)
   const [draft, setDraft] = useState<QuestionDraft>(emptyDraft)
   const [saving, setSaving] = useState(false)
@@ -26,7 +27,6 @@ export default function LiveQnaBoard({ api }: { api: QnaApi }) {
   const request = useRef<{ id: string; draft: string } | null>(null)
   const submitting = useRef(false)
 
-  useEffect(() => api.watchStaff(setStaff), [api])
   useEffect(() => {
     let active = true
     // eslint-disable-next-line react/set-state-in-effect -- Synchronize the pending state with this network request.
@@ -48,10 +48,14 @@ export default function LiveQnaBoard({ api }: { api: QnaApi }) {
   async function submit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault()
     if (submitting.current) return
-    const clean = { nickname: draft.nickname.trim(), title: draft.title.trim(), body: draft.body.trim() }
+    if (isAdminShortcut(draft)) { setDraft(emptyDraft); navigate('/qna/admin'); return }
+    const clean = { name: draft.name.trim(), phone: draft.phone.trim(), email: draft.email.trim(), title: draft.title.trim(), body: draft.body.trim() }
     if (!clean.title || !clean.body) { setError('제목과 내용을 입력해 주세요. 공백만으로는 저장할 수 없습니다.'); return }
-    if (clean.nickname.length > 40 || clean.title.length > 100 || clean.body.length > 2000) {
+    if (clean.title.length > 100 || clean.body.length > 2000) {
       setError('입력 길이를 확인해 주세요. 제목은 100자, 내용은 2,000자까지 작성할 수 있습니다.'); return
+    }
+    if (clean.name.length > 80 || (clean.phone && !/^[0-9+() .-]{7,30}$/.test(clean.phone)) || clean.email.length > 254 || (clean.email && !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(clean.email))) {
+      setError('이름·전화번호·이메일 형식을 확인해 주세요. 연락처는 비워도 됩니다.'); return
     }
     const fingerprint = JSON.stringify(clean)
     if (!request.current || request.current.draft !== fingerprint) request.current = { id: crypto.randomUUID(), draft: fingerprint }
@@ -61,7 +65,7 @@ export default function LiveQnaBoard({ api }: { api: QnaApi }) {
       await api.submit(clean, request.current.id)
       request.current = null
       setDraft(emptyDraft); setSearch(''); setQuery(''); setPage(0)
-      setStatus('질문이 등록되었습니다. 모든 방문자가 볼 수 있습니다.')
+      setStatus('질문이 접수되었습니다. 운영진이 답변한 뒤 질문과 답변이 공개됩니다.')
       closeForm(); refresh()
     } catch (cause) { setError(qnaError(cause)) }
     finally { submitting.current = false; setSaving(false) }
@@ -73,13 +77,23 @@ export default function LiveQnaBoard({ api }: { api: QnaApi }) {
       {t('질문 작성하기')} <span aria-hidden="true">↗</span>
     </button>
   }>
-    <p id="qna-public-notice" className="qna__notice">{t('작성한 질문과 답변은 모든 방문자에게 공개됩니다. 개인정보는 적지 마세요.')}</p>
-    <p className="qna__preview-note">{t('누구나 질문할 수 있으며, ARION 운영진이 답변합니다.')}</p>
-    {writing && <form id="qna-write-form" className="qna__form" aria-label={t('질문 작성하기')} aria-describedby="qna-public-notice" onSubmit={submit}>
+    <p id="qna-public-notice" className="qna__notice">{t('질문은 운영진이 답변한 뒤 공개됩니다. 질문 제목과 내용에는 개인정보를 적지 마세요.')}</p>
+    <p id="qna-contact-notice" className="qna__preview-note">{t('이름·전화번호·이메일은 선택 사항이며 문의 확인을 위해 운영진만 열람합니다. 공개 게시글에는 표시되지 않습니다.')}</p>
+    {writing && <form id="qna-write-form" className="qna__form" noValidate aria-label={t('질문 작성하기')} aria-describedby="qna-public-notice qna-contact-notice" onSubmit={submit}>
       <div className="qna__field">
-        <label className="qna__field-label" htmlFor="qna-nickname">{t('닉네임 (선택)')}</label>
-        <input id="qna-nickname" className="qna__input" maxLength={40} autoComplete="nickname" placeholder={t('익명으로 표시됩니다')} disabled={saving}
-          value={draft.nickname} onChange={event => setDraft({ ...draft, nickname: event.target.value })} />
+        <label className="qna__field-label" htmlFor="qna-name">{t('이름 (선택)')}</label>
+        <input id="qna-name" className="qna__input" maxLength={80} autoComplete="name" disabled={saving}
+          value={draft.name} onChange={event => setDraft({ ...draft, name: event.target.value })} />
+      </div>
+      <div className="qna__field">
+        <label className="qna__field-label" htmlFor="qna-phone">{t('전화번호 (선택)')}</label>
+        <input id="qna-phone" className="qna__input" type="tel" maxLength={30} autoComplete="tel" disabled={saving}
+          value={draft.phone} onChange={event => setDraft({ ...draft, phone: event.target.value })} />
+      </div>
+      <div className="qna__field qna__field--wide">
+        <label className="qna__field-label" htmlFor="qna-contact-email">{t('이메일 (선택)')}</label>
+        <input id="qna-contact-email" className="qna__input" inputMode="email" maxLength={254} autoComplete="email" disabled={saving}
+          value={draft.email} onChange={event => setDraft({ ...draft, email: event.target.value })} />
       </div>
       <div className="qna__field qna__field--wide">
         <label className="qna__field-label" htmlFor="qna-title">{t('질문 제목')}</label>
@@ -112,89 +126,24 @@ export default function LiveQnaBoard({ api }: { api: QnaApi }) {
       {loading && <p className="qna__status" role="status">{t('질문을 불러오는 중…')}</p>}
       {loadError && <div className="qna__empty" role="alert"><p>{t('질문을 불러오지 못했습니다. 다시 시도해 주세요.')}</p><button type="button" className="button" onClick={refresh}>{t('다시 시도')}</button></div>}
       {result.questions.length ? <ul className="qna__list">{result.questions.map(question =>
-          <Question key={question.id} question={question} staff={staff} api={api} onChange={refresh} />
-        )}</ul> : !loading && !loadError && <p className="qna__empty">{t(query ? '검색 결과가 없습니다.' : '아직 등록된 질문이 없습니다.')}</p>}
+          <Question key={question.id} question={question} />
+        )}</ul> : !loading && !loadError && <p className="qna__empty">{t(query ? '검색 결과가 없습니다.' : '아직 공개된 질문이 없습니다.')}</p>}
     </div>
     {!loading && !loadError && result.total > QNA_PAGE_SIZE && <nav className="qna__pagination" aria-label={t('질문 페이지')}>
       <button type="button" className="button" disabled={page === 0} onClick={() => setPage(value => value - 1)}>{t('이전')}</button>
       <span>{page + 1} / {Math.ceil(result.total / QNA_PAGE_SIZE)}</span>
       <button type="button" className="button" disabled={(page + 1) * QNA_PAGE_SIZE >= result.total} onClick={() => setPage(value => value + 1)}>{t('다음')}</button>
     </nav>}
-    <StaffLogin api={api} staff={staff} />
+    <div className="qna__staff-login"><Link to="/qna/admin">{t('운영진 로그인')}</Link></div>
   </Section>
 }
 
-function Question({ question: q, staff, api, onChange }: { question: PublicQuestion; staff: boolean; api: QnaApi; onChange: () => void }) {
+function Question({ question: q }: { question: PublicQuestion }) {
   const { t, language } = useLanguage()
-  const [answer, setAnswer] = useState(q.answer ?? '')
-  const [editing, setEditing] = useState(false)
-  const [confirmHide, setConfirmHide] = useState(false)
-  const [busy, setBusy] = useState(false)
-  const [error, setError] = useState('')
-  const pending = useRef(false)
   const date = (value: string) => new Intl.DateTimeFormat(language === 'ko' ? 'ko-KR' : 'en-US', { year: 'numeric', month: '2-digit', day: '2-digit' }).format(new Date(value))
-  async function mutate(action: 'answer' | 'hide') {
-    if (pending.current) return
-    if (action === 'answer' && (!answer.trim() || answer.trim().length > 4000)) { setError('답변은 1자 이상, 4,000자 이하로 작성해 주세요.'); return }
-    pending.current = true; setBusy(true); setError('')
-    try {
-      if (action === 'answer') await api.answer(q.id, answer.trim())
-      else await api.hide(q.id)
-      setEditing(false); setConfirmHide(false); onChange()
-    } catch (cause) { setError(qnaError(cause)) }
-    finally { pending.current = false; setBusy(false) }
-  }
   return <li><details className="qna__item">
-    <summary>
-      <span className="qna__item-meta"><span className="badge">{t(q.answer ? '답변 완료' : '답변 대기')}</span><span>{q.nickname || t('익명')}</span><time dateTime={q.created_at}>{date(q.created_at)}</time></span>
-      <span className="qna__item-title">{q.title}</span>
-    </summary>
+    <summary><span className="qna__item-meta"><span className="badge">{t('답변 완료')}</span><span>{t('익명')}</span><time dateTime={q.created_at}>{date(q.created_at)}</time></span><span className="qna__item-title">{q.title}</span></summary>
     <div className="qna__item-body"><p>{q.body}</p></div>
-    {q.answer && <div className="qna__answer"><div className="qna__item-meta"><strong>{t('ARION 운영진')}</strong>{q.answered_at && <time dateTime={q.answered_at}>{date(q.answered_at)}</time>}</div><p>{q.answer}</p></div>}
-    {staff && <div className="qna__moderation">
-      <div className="qna__staff-actions">
-        <button type="button" className="button" disabled={busy} onClick={() => { if (!editing) setAnswer(q.answer ?? ''); setEditing(!editing); setError('') }}>{t(q.answer ? '답변 수정' : '답변 작성')}</button>
-        <button type="button" className="button" disabled={busy} onClick={() => setConfirmHide(!confirmHide)}>{t('질문 숨기기')}</button>
-      </div>
-      {editing && <form className="qna__reply-form" onSubmit={event => { event.preventDefault(); void mutate('answer') }}>
-        <label className="qna__field-label" htmlFor={`answer-${q.id}`}>{t('운영진 답변')}</label>
-        <textarea id={`answer-${q.id}`} className="qna__textarea" required maxLength={4000} value={answer} disabled={busy} onChange={event => setAnswer(event.target.value)} />
-        <button className="button button--primary" type="submit" disabled={busy}>{t(busy ? '저장 중…' : '답변 저장')}</button>
-      </form>}
-      {confirmHide && <div className="qna__hide-confirm"><p>{t('질문과 답변을 공개 목록에서 숨길까요?')}</p><button type="button" className="button" disabled={busy} onClick={() => setConfirmHide(false)}>{t('취소')}</button><button type="button" className="button" disabled={busy} onClick={() => void mutate('hide')}>{t('숨기기 확인')}</button></div>}
-      {error && <p className="qna__status" role="alert">{t(error)}</p>}
-    </div>}
+    <div className="qna__answer"><div className="qna__item-meta"><strong>{t('ARION 운영진')}</strong>{q.answered_at && <time dateTime={q.answered_at}>{date(q.answered_at)}</time>}</div><p>{q.answer}</p></div>
   </details></li>
-}
-
-function StaffLogin({ api, staff }: { api: QnaApi; staff: boolean }) {
-  const { t } = useLanguage()
-  const [email, setEmail] = useState('')
-  const [password, setPassword] = useState('')
-  const [busy, setBusy] = useState(false)
-  const [error, setError] = useState('')
-  const pending = useRef(false)
-  async function signIn(event: FormEvent<HTMLFormElement>) {
-    event.preventDefault()
-    if (pending.current) return
-    pending.current = true; setBusy(true); setError('')
-    try { await api.signIn(email, password); setPassword('') }
-    catch (cause) { setError(qnaError(cause)); setPassword('') }
-    finally { pending.current = false; setBusy(false) }
-  }
-  async function signOut() {
-    if (pending.current) return
-    pending.current = true; setBusy(true); setError('')
-    try { await api.signOut() } catch (cause) { setError(qnaError(cause)) }
-    finally { pending.current = false; setBusy(false) }
-  }
-  return <div className="qna__staff-login">
-    {staff ? <div className="qna__staff-actions"><span>{t('ARION 운영진으로 로그인했습니다.')}</span><button type="button" className="button" disabled={busy} onClick={() => void signOut()}>{t('로그아웃')}</button></div>
-      : <details><summary>{t('운영진 로그인')}</summary><form className="qna__login-form" onSubmit={signIn}>
-        <label className="qna__field" htmlFor="qna-email">{t('이메일')}<input id="qna-email" className="qna__input" type="email" required autoComplete="username" value={email} onChange={event => setEmail(event.target.value)} disabled={busy} /></label>
-        <label className="qna__field" htmlFor="qna-password">{t('비밀번호')}<input id="qna-password" className="qna__input" type="password" required autoComplete="current-password" value={password} onChange={event => setPassword(event.target.value)} disabled={busy} /></label>
-        <button className="button" type="submit" disabled={busy}>{t(busy ? '로그인 중…' : '로그인')}</button>
-      </form></details>}
-    {error && <p className="qna__status" role="alert">{t(error)}</p>}
-  </div>
 }
