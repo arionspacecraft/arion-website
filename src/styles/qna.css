@@ -37,6 +37,21 @@
 .qna__item[open] .qna__item-title::after { content: '−'; }
 .qna__item-body { margin: 0 12px 24px; padding: 24px; border-radius: 8px; background: var(--color-surface); white-space: pre-wrap; overflow-wrap: anywhere; font-size: 17px; line-height: 1.9; }
 .qna__empty { padding: 64px 24px; border-top: 1px solid var(--color-border); border-bottom: 1px solid var(--color-border); color: var(--color-muted); font-size: 16px; text-align: center; }
+.qna .button:disabled { opacity: .55; cursor: wait; }
+.qna__answer { margin: 0 12px 24px; padding: 24px; border-left: 3px solid var(--color-highlight); border-radius: 8px; background: var(--color-surface); }
+.qna__answer > p { margin-top: 16px; white-space: pre-wrap; overflow-wrap: anywhere; font-size: 17px; line-height: 1.9; }
+.qna__moderation { margin: 0 12px 24px; }
+.qna__staff-actions, .qna__pagination { display: flex; flex-wrap: wrap; align-items: center; gap: 12px; }
+.qna__pagination { justify-content: center; margin-top: 28px; }
+.qna__reply-form, .qna__login-form { display: grid; gap: 16px; margin-top: 20px; }
+.qna__reply-form .button, .qna__login-form .button { justify-self: start; }
+.qna__hide-confirm { margin-top: 20px; padding: 20px; border: 1px solid var(--color-border); border-radius: 8px; }
+.qna__hide-confirm p { margin-bottom: 12px; }
+.qna__hide-confirm .button + .button { margin-left: 12px; }
+.qna__staff-login { margin-top: 44px; padding-top: 24px; border-top: 1px solid var(--color-border); font-size: 15px; color: var(--color-muted); }
+.qna__staff-login summary { cursor: pointer; }
+.qna__login-form { max-width: 440px; }
+.qna__empty > .button { margin-top: 16px; }
 @media (max-width: 560px) {
   .qna__search-input, .qna__input, .qna__textarea { font-size: 16px; }
   .qna__notice { padding: 16px; font-size: 16px; }
