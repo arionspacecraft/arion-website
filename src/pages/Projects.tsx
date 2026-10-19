@@ -17,7 +17,7 @@ export default function Projects() {
   return (
     <>
       <PageHeader eyebrow="Projects" title={t("프로젝트")} lead="ARION이 설계하고 만드는 것들" />
-      <Section>
+      <Section className="section--cards">
         <FilterTabs options={projectStatusFilters.map(option => option.value)} value={status} onChange={setStatus} />
         {shown.length > 0 ? (
           <div className="grid grid--3">

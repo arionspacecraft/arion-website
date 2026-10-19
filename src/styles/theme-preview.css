@@ -1,4 +1,4 @@
-/* ARION daylight: white surfaces, navy typography and deep blue particles.
+/* ARION daylight: white reading surfaces, pale blue headers and navy typography.
    Flat selectors also keep the complete palette on browsers without CSS nesting. */
 :root[data-theme='dark'] { color-scheme: dark; }
 :root[data-theme='light'] {
@@ -7,11 +7,13 @@
   --color-surface: #ffffff;
   --color-text: #1c2638;
   --color-muted: #56657a;
-  --color-border: #dce3ec;
+  --color-border: #d4deec;
   --color-highlight: #214f8f;
   --sky: #315e96;
   --day-copper: #955632;
-  --day-tint: #f2f5fa;
+  --day-tint: #edf2fa;
+  --day-card-border: #cedaec;
+  --day-card-shadow: 0 4px 18px #1b3d6b09, 0 1px 3px #1b3d6b05;
   --day-deep: #0b2436;
 }
 .theme-preview { position: fixed; left: 24px; bottom: 20px; z-index: 25; font-size: 11px; }
@@ -35,7 +37,7 @@
 :root[data-theme='light'] .language-toggle { color: #515966; }
 :root[data-theme='light'] .nav__link:hover,
 :root[data-theme='light'] .nav__link.active { color: var(--color-text); }
-:root[data-theme='light'] .nav__link::after { background: var(--day-copper); }
+:root[data-theme='light'] .nav__link::after { background: var(--color-highlight); }
 :root[data-theme='light'] .header__toggle span { background: var(--day-deep); }
 :root[data-theme='light'] .header__join,
 :root[data-theme='light'] .language-toggle { border-color: #9dafaa; }
@@ -46,28 +48,53 @@
 :root[data-theme='light'] .nav-menu__links a:hover,
 :root[data-theme='light'] .nav-menu__links a:focus-visible { background: var(--day-tint); }
 
-/* Daylight content uses warm neutrals; color signals navigation or status. */
-:root[data-theme='light'] .eyebrow { color: var(--day-copper); }
-:root[data-theme='light'] .page-header { background: radial-gradient(ellipse at 85% 30%, #edf2fa, transparent 65%), #ffffff; border-color: var(--color-border); }
-:root[data-theme='light'] .page-header::after { border-color: #4c807b30; box-shadow: 0 0 0 60px #4c807b09, 0 0 0 120px #4c807b07; }
+/* Body sections share a white reading surface; cards retain their borders and shadows. */
+:root[data-theme='light'] .section--cards { background: var(--color-bg); }
+:root[data-theme='light'] .card,
+:root[data-theme='light'] .team-module,
+:root[data-theme='light'] .team-detail__roles,
+:root[data-theme='light'] .qna__form {
+  background: var(--color-surface);
+  border-color: var(--day-card-border);
+  box-shadow: var(--day-card-shadow);
+}
+:root[data-theme='light'] .section--cards .empty { background: var(--color-surface); }
+
+/* Navy headings and blue accents keep the daylight palette coherent. */
+:root[data-theme='light'] .eyebrow { color: var(--color-highlight); }
+:root[data-theme='light'] .page-header {
+  background: radial-gradient(ellipse at 85% 25%, #b8cdf08c, transparent 65%), linear-gradient(120deg, #f7f9fd, #edf2fa 55%, #e3ecfa);
+  border-color: #ccd9ed;
+}
+:root[data-theme='light'] .page-header::after {
+  width: 690px;
+  height: 690px;
+  right: calc(4% - 120px);
+  top: -300px;
+  border-color: #7194c430;
+  background: radial-gradient(circle, transparent 223px, #7194c45c 224px, #7194c45c 225px, transparent 226px, transparent 283px, #7194c43d 284px, #7194c43d 285px, transparent 286px);
+  box-shadow: none;
+}
 :root[data-theme='light'] .page-header .eyebrow,
-:root[data-theme='light'] .card > .eyebrow { color: var(--day-copper); }
+:root[data-theme='light'] .card > .eyebrow { color: var(--color-highlight); }
 :root[data-theme='light'] .page-header .lead { color: var(--color-muted); }
-:root[data-theme='light'] .button { color: var(--day-deep); border-color: #7d9692; }
-:root[data-theme='light'] .button:hover { background: #e1e9e0; border-color: #286c70; }
+:root[data-theme='light'] .button { color: var(--day-deep); border-color: #9aafcc; }
+:root[data-theme='light'] .button:hover { background: var(--day-tint); border-color: var(--color-highlight); }
 :root[data-theme='light'] .button--primary,
 :root[data-theme='light'] .journey .button--primary { background: #030627; color: #fffefa; border-color: #030627; }
 :root[data-theme='light'] .button--primary:hover,
 :root[data-theme='light'] .journey .button--primary:hover { background: #164d5a; border-color: #164d5a; }
-:root[data-theme='light'] .badge { color: #51625e; border-color: #a8b9ad; background: #f0f3eb; }
+:root[data-theme='light'] .badge { color: var(--color-muted); border-color: #c8d6e9; background: #f2f5fb; }
 :root[data-theme='light'] .badge--active { color: #176663; border-color: #8db7aa; background: #e4f0e7; }
 :root[data-theme='light'] .badge--active::before { background: #287e6b; }
 :root[data-theme='light'] .badge--accent { color: #fffefa; background: var(--day-deep); border-color: var(--day-deep); }
-:root[data-theme='light'] .tab { color: #425e62; border-color: #a9bdb4; }
+:root[data-theme='light'] .tab { color: #435c7e; border-color: #b7c8df; }
 :root[data-theme='light'] .tab[aria-pressed='true'],
 :root[data-theme='light'] .tab[aria-current='page'] { color: #fffefa; background: var(--day-deep); border-color: var(--day-deep); }
 :root[data-theme='light'] .project-card { background: var(--color-surface); }
-:root[data-theme='light'] .card--link:hover { border-color: #658d80; box-shadow: 0 12px 30px #263f3810; }
+:root[data-theme='light'] .card--link:hover,
+:root[data-theme='light'] .team-summary:hover,
+:root[data-theme='light'] .team-module:hover { border-color: #8ba8cf; box-shadow: 0 10px 28px #1b3d6b12, 0 2px 6px #1b3d6b06; }
 :root[data-theme='light'] .project-card__link,
 :root[data-theme='light'] .timeline__date,
 :root[data-theme='light'] .numbered > li::before { color: var(--color-highlight); }
@@ -90,17 +117,17 @@
   border-color: #d4e1f0;
 }
 :root[data-theme='light'] .project-visual__object { filter: drop-shadow(0 8px 12px #20467320); }
-:root[data-theme='light'] .home-projects { background: #f5f7fb; }
+:root[data-theme='light'] .home-projects { background: var(--day-tint); }
 :root[data-theme='light'] .news-item__link:hover { background: #eef3fa; }
-:root[data-theme='light'] .news-item__arrow { color: var(--day-copper); }
+:root[data-theme='light'] .news-item__arrow { color: var(--color-highlight); }
 :root[data-theme='light'] .prose { color: #4a5260; }
-:root[data-theme='light'] .recruit-box { background: #f4f7fc; }
+:root[data-theme='light'] .recruit-box { background: var(--color-surface); }
 :root[data-theme='light'] .recruit-status { color: #4d6664; }
-:root[data-theme='light'] .team-module { background: #ffffff; border-color: var(--color-border); }
-:root[data-theme='light'] .team-module:hover { background: #f2f6fc; }
-:root[data-theme='light'] .team-module__top { color: var(--day-copper); }
+:root[data-theme='light'] .team-module { background: #ffffff; }
+:root[data-theme='light'] .team-module:hover { background: #ffffff; }
+:root[data-theme='light'] .team-module__top { color: var(--color-highlight); }
 :root[data-theme='light'] .team-module__en,
-:root[data-theme='light'] .team-module > p { color: #526b68; }
+:root[data-theme='light'] .team-module > p { color: var(--color-muted); }
 :root[data-theme='light'] .team-module__line { background: #69788d; opacity: 1; }
 :root[data-theme='light'] .mission__title span,
 :root[data-theme='light'] .stats__motto dd,
@@ -111,8 +138,9 @@
 :root[data-theme='light'] .mission__orbit::after { background: #9eb5a7; }
 :root[data-theme='light'] .mission__orbit span { background: var(--day-copper); }
 
-/* White canvas and reading panels keep the blue atlas crisp. */
-:root[data-theme='light'] .journey__viewport { background: #ffffff; }
+/* Pale blue space sits behind white translucent homepage reading panels. */
+:root[data-theme='light'] .journey__viewport { background: var(--day-tint); }
+:root[data-theme='light'] .home-journey { --home-panel-background: linear-gradient(100deg, #fffffff5, #ffffffdf 56%, #ffffff90); }
 :root[data-theme='light'] .journey__intro,
 :root[data-theme='light'] .home-journey .section__head,
 :root[data-theme='light'] .home-journey .mission__layout,
@@ -124,12 +152,12 @@
 :root[data-theme='light'] .journey__hero-note,
 :root[data-theme='light'] .journey__invitation,
 :root[data-theme='light'] .launch__about { color: #62666d; }
-:root[data-theme='light'] .launch__eyebrow { color: var(--day-copper); }
-:root[data-theme='light'] .launch__eyebrow > span { border-color: var(--day-copper); }
+:root[data-theme='light'] .launch__eyebrow { color: var(--color-highlight); }
+:root[data-theme='light'] .launch__eyebrow > span { border-color: var(--color-highlight); }
 :root[data-theme='light'] .launch__about:hover { color: var(--day-deep); }
-:root[data-theme='light'] .home-journey > .section { background: #ffffff; }
+:root[data-theme='light'] .home-journey > .section { background: var(--home-panel-background); }
 :root[data-theme='light'] .home-journey .project-card,
-:root[data-theme='light'] .home-journey .team-module { background: #ffffff; }
+:root[data-theme='light'] .home-journey .team-module { background: #fffffff5; }
 :root[data-theme='light'] .home-journey .news-item { background: #fffffff0; }
 :root[data-theme='light'] .home-journey .section__description,
 :root[data-theme='light'] .home-journey .muted { color: var(--color-muted); }
@@ -146,19 +174,20 @@
 :root[data-theme='light'] .journey__stages button:hover { color: #1c2638; background: #f2f5fa; }
 :root[data-theme='light'] .journey__track { background: #dce5f1; }
 :root[data-theme='light'] .journey__track > div { background: #275798; }
-:root[data-theme='light'] :is(button, a, summary):focus-visible { outline-color: #a45f32; }
+:root[data-theme='light'] :is(button, a, summary):focus-visible { outline-color: var(--color-highlight); }
 :root[data-theme='light'] ::selection { color: #fffefa; background: #334b70; }
 
-/* A pale, opaque invitation keeps the moving atlas behind the reading surface. */
+/* The invitation shares the homepage white translucent reading surface. */
 :root[data-theme='light'] .join-banner,
 :root[data-theme='light'] .home-journey > .join-banner {
   --color-text: #1c2e49;
   --color-muted: #56657a;
   --color-border: #d8e2ef;
   color: var(--color-text);
-  background: #f4f7fc;
+  background: var(--day-tint);
   border-top: 1px solid var(--color-border);
 }
+:root[data-theme='light'] .home-journey > .join-banner { background: var(--home-panel-background); }
 :root[data-theme='light'] .join-banner::after { border-color: #91aacb40; }
 :root[data-theme='light'] .join-banner .eyebrow { color: #476c9a; }
 :root[data-theme='light'] .join-banner h2 > span { color: var(--color-text); }
@@ -186,12 +215,19 @@
 :root[data-theme='light'] .footer__nav a span { color: #b9a98d; }
 :root[data-theme='light'] .footer__nav a:hover,
 :root[data-theme='light'] .footer__contact a:hover { color: #fffefa; }
+@media (min-width: 1121px) {
+  :root[data-theme='light'] .nav-menu__links {
+    background: #ffffff;
+    border-color: var(--day-card-border);
+    box-shadow: 0 14px 36px #15355f14, 0 2px 6px #15355f08;
+  }
+}
 @media (max-width: 1120px) {
   :root[data-theme='light'] .nav { background: #ffffff; border-color: var(--color-border); box-shadow: 0 20px 40px #1c3b6418; }
   :root[data-theme='light'] .nav__link { border-color: var(--color-border); }
 }
 @media (max-width: 700px) {
-  :root[data-theme='light'] .home-journey > .section { background: #ffffff; }
+  :root[data-theme='light'] .home-journey { --home-panel-background: #ffffffed; }
   .theme-preview { left: 16px; bottom: calc(88px + env(safe-area-inset-bottom, 0px)); }
   body:not(:has(.home-journey)) .theme-preview { bottom: calc(16px + env(safe-area-inset-bottom, 0px)); }
 }

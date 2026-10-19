@@ -17,7 +17,7 @@ export default function Recruit() {
     <>
       <PageHeader eyebrow="Join us" title={t("신입 부원 모집")} lead="아리온과 함께 DGIST 최초의 역사를 만들어갑니다." />
 
-      <Section>
+      <Section className="section--cards">
         <div className="card recruit-box">
           <RecruitStatus />
           {state.round && (
@@ -38,7 +38,7 @@ export default function Recruit() {
         </div>
       </Section>
 
-      <Section eyebrow="Who we seek" title={t("이런 분을 찾습니다")}>
+      <Section eyebrow="Who we seek" title={t("이런 분을 찾습니다")} className="section--cards">
         <ol className="grid grid--3 numbered">
           {seeking.map((item) => (
             <li key={item.title} className="card">
@@ -49,7 +49,7 @@ export default function Recruit() {
         </ol>
       </Section>
 
-      <Section eyebrow="Process" title={t("모집 절차")}>
+      <Section eyebrow="Process" title={t("모집 절차")} className="section--cards">
         <ol className="grid grid--3 numbered">
           {steps.map((step) => (
             <li key={step.title} className="card">

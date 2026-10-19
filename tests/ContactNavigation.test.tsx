@@ -43,7 +43,7 @@ it('puts Q&A first while keeping direct contact reachable and both pages active 
   expect(container.querySelector('.footer__nav a[href="/contact"]')?.textContent).toContain('직접 문의')
 
   act(() => container.querySelector<HTMLAnchorElement>('.contact-nav a[href="/contact"]')!.click())
-  expect(container.querySelector('h1')?.textContent).toBe('직접 문의')
+  expect(container.querySelector('h1')?.textContent).toBe('직접 문의하기')
   expect(container.querySelector('.contact-people')).not.toBeNull()
   expect(container.querySelector('#qna')).toBeNull()
   expect(container.querySelector('.contact-nav a[aria-current="page"]')?.getAttribute('href')).toBe('/contact')

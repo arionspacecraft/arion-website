@@ -64,7 +64,7 @@ export const english: Record<string, string> = {
   '함께하는 팀': 'Our teams', '개의 전문 분야': 'Disciplines', '더 먼 곳을 향해': 'Always farther',
   '모든 프로젝트': 'All projects', '팀 자세히 보기': 'Meet the teams', '도전의 기록': 'Our logbook', '모든 소식': 'All news', '모집 안내 보기': 'How to join',
   '활동 내용': 'What we do', '연혁': 'Our history', '협업, 후원, 입부 문의 모두 환영합니다.': 'Get in touch about collaboration, sponsorship or joining the team.',
-  '전화': 'Phone', '이메일': 'Email', '인스타그램': 'Instagram', '위치': 'Location', '연락처는 곧 공개됩니다.': 'Contact details will be available soon.',
+  '연락처': 'Contact details', '전화': 'Phone', '이메일': 'Email', '인스타그램': 'Instagram', '위치': 'Location', '연락처는 곧 공개됩니다.': 'Contact details will be available soon.',
   '공지와 활동 기록': 'Announcements and stories from the team', '해당하는 소식이 없습니다.': 'No news in this category yet.',
   '다른 소식': 'More news', '목록': 'All news', '페이지를 찾을 수 없습니다': 'Page not found', '홈으로': 'Back to home',
   '제원': 'Specifications', '← 프로젝트 목록': '← All projects', 'ARION이 설계하고 만드는 것들': 'What ARION designs and builds',

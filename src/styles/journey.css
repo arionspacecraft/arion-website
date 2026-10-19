@@ -36,9 +36,9 @@
 .journey__footnote { font: 9px var(--font-mono); color: #849bbd; padding: 12px 10px 4px; }
 .journey__fallback { position: absolute; top: 30%; left: 65%; width: 130px; }
 .header__join { white-space: nowrap; }
-/* Preserve the foreground reading order while the atlas continues underneath. */
-.home-journey > .section, .home-journey > .join-banner { background: #030610; }
-.home-journey .section__head, .home-journey .mission__layout, .home-journey .team-intro, .home-journey .stats { text-shadow: none; }
+/* Translucent reading panels reveal the atlas without blurring the animated canvas. */
+.home-journey > .section, .home-journey > .join-banner { background: linear-gradient(90deg, #030610e8, #030610b8 48%, #03061052); }
+.home-journey .section__head, .home-journey .mission__layout, .home-journey .team-intro, .home-journey .stats { text-shadow: 0 2px 16px #020411; }
 .home-journey .project-card, .home-journey .team-module { background: #080e1de3; }
 .home-journey .news-item { background: #060c19bf; }
 .home-journey .section__description, .home-journey .muted { color: #b0bfd6; }
@@ -71,7 +71,7 @@
   .journey__atlas summary { gap: 10px; font-size: 13px; padding: 12px; }
   .journey__atlas summary > :last-child { margin-left: auto; }
   .journey__toggle { font-size: 10px; padding: 10px 12px; }
-  .home-journey > .section, .home-journey > .join-banner { background: #030610; }
+  .home-journey > .section, .home-journey > .join-banner { background: #030610b3; }
   .journey__fallback { left: 60%; top: 56%; width: 100px; }
 }
 @media (max-height: 600px) and (orientation: landscape) {

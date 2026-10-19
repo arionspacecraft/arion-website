@@ -39,7 +39,7 @@ export default function TeamDetail() {
           </aside>
         </div>
       </Section>
-      <Section eyebrow="WHAT WE EXPLORE" title="함께하는 일">
+      <Section eyebrow="WHAT WE EXPLORE" title="함께하는 일" className="section--cards">
         <div className="team-detail__tasks">
           {team.tasks.map((task, index) => (
             <article className="team-detail__step card" key={task}>

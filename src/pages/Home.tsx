@@ -43,7 +43,7 @@ export default function Home() {
 
       <div className="journey__window" data-flight-stop="solar" aria-hidden="true" />
 
-      <Section eyebrow="ENGINEERING IN PROGRESS" title={home.projects.title} action={<Link className="text-link" to="/projects">{t("모든 프로젝트")} <span aria-hidden="true">↗</span></Link>} className="home-projects">
+      <Section eyebrow="ENGINEERING IN PROGRESS" title={home.projects.title} action={<Link className="text-link" to="/projects">{t("모든 프로젝트")} <span aria-hidden="true">↗</span></Link>} className="home-projects section--cards">
         <p className="section__description">{t(home.projects.description)}</p>
         {shownProjects.length > 0
           ? <div className="grid grid--3">{shownProjects.map((project) => <ProjectCard key={project.slug} project={project} />)}</div>
@@ -52,7 +52,7 @@ export default function Home() {
 
       <div className="journey__window" data-flight-stop="galaxy" aria-hidden="true" />
 
-      <Section eyebrow="THE TEAM BEHIND THE ROCKET" title={`${t(home.teams.title)} ${t(home.teams.accent)}`} action={<Link className="text-link" to="/teams">{t("팀 자세히 보기")} <span aria-hidden="true">↗</span></Link>} className="home-teams">
+      <Section eyebrow="THE TEAM BEHIND THE ROCKET" title={`${t(home.teams.title)} ${t(home.teams.accent)}`} action={<Link className="text-link" to="/teams">{t("팀 자세히 보기")} <span aria-hidden="true">↗</span></Link>} className="home-teams section--cards">
         <p className="section__description">{t(home.teams.description)}</p>
         <div className="team-deck">
           {teams.map((team, index) => (

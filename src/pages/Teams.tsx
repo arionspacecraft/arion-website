@@ -12,7 +12,7 @@ export default function Teams() {
   return (
     <>
       <PageHeader eyebrow="Teams" title="팀 구성" lead="하나의 로켓을 위해 각 팀이 함께 움직입니다." />
-      <Section>
+      <Section className="section--cards">
         <div className="team-overview">
           {teams.map((team, index) => (
             <Link key={team.slug} to={`/teams/${team.slug}`} className="team-summary card">
