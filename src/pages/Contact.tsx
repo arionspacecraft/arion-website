@@ -8,14 +8,14 @@ import { usePageTitle } from '../lib/usePageTitle'
 
 export default function Contact() {
   const { t } = useLanguage()
-  usePageTitle('직접 문의')
+  usePageTitle('직접 문의하기')
   const { email, instagram, location, leaders } = site.contact
 
   return (
     <>
-      <PageHeader eyebrow="Contact" title={t("직접 문의")} lead="협업, 후원, 입부 문의 모두 환영합니다." />
+      <PageHeader eyebrow="Contact" title={t("직접 문의하기")} lead="협업, 후원, 입부 문의 모두 환영합니다." />
       <ContactNavigation />
-      <Section id="contact-info" eyebrow="CONTACT" title="직접 문의" className="section--cards">
+      <Section id="contact-info" eyebrow="CONTACT" title="연락처" className="section--cards">
         <div className="grid grid--2 contact-people">
           {leaders.map((person) => (
             <article className="card contact-person" key={person.role}>

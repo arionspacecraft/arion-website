@@ -7,7 +7,7 @@ import { createSolarLabelLayout, solarLabelStyle, solarCaptionNames } from '../l
 type Label = { name: string; catalog: string; x: number; y: number; radius: number; alpha: number; priority: number }
 type Box = { x: number; y: number; width: number; height: number }
 type Displacement = { x: number; y: number }
-// Daylight uses deep blue ink on white. Tonal differences keep the planets,
+// Daylight uses deep blue ink on a pale blue background. Tonal differences keep the planets,
 // rocket and larger structures distinct without mixing warm and cool particles.
 const daylightColors: Record<string, string> = {
   '#96e5db': '#18448a', '#e2f2ff': '#7d9bc3', '#5d91d6': '#2a5a9c',
@@ -268,7 +268,6 @@ export function createFlightRenderer(canvas: HTMLCanvasElement, ctx: CanvasRende
     })
     boxes.forEach((box, index) => {
       ctx.globalAlpha = items[index].alpha
-      ctx.fillStyle = light ? '#ffffffeb' : '#050a18b8'; ctx.fillRect(box.x, box.y, box.width, box.height)
       ctx.shadowColor = '#020411'; ctx.shadowBlur = light ? 0 : 5
       ctx.fillStyle = light ? '#1c3b64' : '#e4efff'; ctx.font = `500 ${metrics.font}px Consolas, monospace`
       ctx.fillText(box.name, box.x + 6, box.y + metrics.font + 2)
@@ -355,7 +354,7 @@ export function createFlightRenderer(canvas: HTMLCanvasElement, ctx: CanvasRende
       centre = { x: mix(centre.x, (width - captionWidth - 12) / 2, solarFit), y: centre.y }
       unit = mix(unit, Math.min(unit, (width - captionWidth - 44) / 2.16), solarFit)
       const background = ctx.createRadialGradient(centre.x, centre.y, 0, centre.x, centre.y, width * 0.8)
-      background.addColorStop(0, light ? '#ffffff' : '#030627'); background.addColorStop(0.65, light ? '#ffffff' : '#050916'); background.addColorStop(1, light ? '#fbfcfe' : '#06080e')
+      background.addColorStop(0, light ? '#edf2fa' : '#030627'); background.addColorStop(0.65, light ? '#edf2fa' : '#050916'); background.addColorStop(1, light ? '#e7eef9' : '#06080e')
       ctx.fillStyle = background; ctx.fillRect(0, 0, width, height)
       for (let i = 0; i < stars.length; i++) {
         const s = stars[i]

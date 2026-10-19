@@ -130,7 +130,7 @@ it('recolors the paused canvas without changing celestial or label positions', (
   expect(stops).toContain('#030627')
   expect(night.find(text => text.value === 'EARTH')?.color).toBe('#e4efff')
   theme = 'light'; stops.length = 0; draw()
-  expect(stops).toContain('#ffffff')
+  expect(stops).toContain('#edf2fa')
   expect(texts.find(text => text.value === 'EARTH')?.color).toBe('#1c3b64')
   expect(texts.map(({ value, x, y }) => ({ value, x, y }))).toEqual(night.map(({ value, x, y }) => ({ value, x, y })))
 })

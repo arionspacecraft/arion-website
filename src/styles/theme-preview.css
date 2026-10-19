@@ -1,4 +1,4 @@
-/* ARION daylight: white cards, pale blue sections and navy typography.
+/* ARION daylight: white reading surfaces, pale blue headers and navy typography.
    Flat selectors also keep the complete palette on browsers without CSS nesting. */
 :root[data-theme='dark'] { color-scheme: dark; }
 :root[data-theme='light'] {
@@ -48,8 +48,8 @@
 :root[data-theme='light'] .nav-menu__links a:hover,
 :root[data-theme='light'] .nav-menu__links a:focus-visible { background: var(--day-tint); }
 
-/* Pale blue sections separate white cards from the main reading surface. */
-:root[data-theme='light'] .section--cards { background: var(--day-tint); }
+/* Body sections share a white reading surface; cards retain their borders and shadows. */
+:root[data-theme='light'] .section--cards { background: var(--color-bg); }
 :root[data-theme='light'] .card,
 :root[data-theme='light'] .team-module,
 :root[data-theme='light'] .team-detail__roles,
@@ -59,8 +59,6 @@
   box-shadow: var(--day-card-shadow);
 }
 :root[data-theme='light'] .section--cards .empty { background: var(--color-surface); }
-:root[data-theme='light'] .qna__notice,
-:root[data-theme='light'] .qna__item-body { background: var(--day-tint); }
 
 /* Navy headings and blue accents keep the daylight palette coherent. */
 :root[data-theme='light'] .eyebrow { color: var(--color-highlight); }
@@ -140,8 +138,9 @@
 :root[data-theme='light'] .mission__orbit::after { background: #9eb5a7; }
 :root[data-theme='light'] .mission__orbit span { background: var(--day-copper); }
 
-/* White canvas and reading panels keep the blue atlas crisp. */
-:root[data-theme='light'] .journey__viewport { background: #ffffff; }
+/* Pale blue space sits behind white translucent homepage reading panels. */
+:root[data-theme='light'] .journey__viewport { background: var(--day-tint); }
+:root[data-theme='light'] .home-journey { --home-panel-background: linear-gradient(100deg, #fffffff5, #ffffffdf 56%, #ffffff90); }
 :root[data-theme='light'] .journey__intro,
 :root[data-theme='light'] .home-journey .section__head,
 :root[data-theme='light'] .home-journey .mission__layout,
@@ -156,8 +155,7 @@
 :root[data-theme='light'] .launch__eyebrow { color: var(--color-highlight); }
 :root[data-theme='light'] .launch__eyebrow > span { border-color: var(--color-highlight); }
 :root[data-theme='light'] .launch__about:hover { color: var(--day-deep); }
-:root[data-theme='light'] .home-journey > .section { background: linear-gradient(100deg, #fffffff5, #ffffffdf 56%, #f8faff90); }
-:root[data-theme='light'] .home-journey > .section--cards { background: linear-gradient(100deg, #edf2faf5, #edf2fadf 56%, #e3ecfa90); }
+:root[data-theme='light'] .home-journey > .section { background: var(--home-panel-background); }
 :root[data-theme='light'] .home-journey .project-card,
 :root[data-theme='light'] .home-journey .team-module { background: #fffffff5; }
 :root[data-theme='light'] .home-journey .news-item { background: #fffffff0; }
@@ -179,7 +177,7 @@
 :root[data-theme='light'] :is(button, a, summary):focus-visible { outline-color: var(--color-highlight); }
 :root[data-theme='light'] ::selection { color: #fffefa; background: #334b70; }
 
-/* A pale, opaque invitation keeps the moving atlas behind the reading surface. */
+/* The invitation shares the homepage white translucent reading surface. */
 :root[data-theme='light'] .join-banner,
 :root[data-theme='light'] .home-journey > .join-banner {
   --color-text: #1c2e49;
@@ -189,6 +187,7 @@
   background: var(--day-tint);
   border-top: 1px solid var(--color-border);
 }
+:root[data-theme='light'] .home-journey > .join-banner { background: var(--home-panel-background); }
 :root[data-theme='light'] .join-banner::after { border-color: #91aacb40; }
 :root[data-theme='light'] .join-banner .eyebrow { color: #476c9a; }
 :root[data-theme='light'] .join-banner h2 > span { color: var(--color-text); }
@@ -228,8 +227,7 @@
   :root[data-theme='light'] .nav__link { border-color: var(--color-border); }
 }
 @media (max-width: 700px) {
-  :root[data-theme='light'] .home-journey > .section { background: #ffffffed; }
-  :root[data-theme='light'] .home-journey > .section--cards { background: #edf2faed; }
+  :root[data-theme='light'] .home-journey { --home-panel-background: #ffffffed; }
   .theme-preview { left: 16px; bottom: calc(88px + env(safe-area-inset-bottom, 0px)); }
   body:not(:has(.home-journey)) .theme-preview { bottom: calc(16px + env(safe-area-inset-bottom, 0px)); }
 }
