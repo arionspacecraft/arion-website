@@ -141,3 +141,18 @@ it('revokes private access immediately when the staff registry changes', async (
   await asUser(operator, false)
   await expect(db.query('select public.qna_staff_list()')).rejects.toThrow('QNA_FORBIDDEN')
 })
+
+it('keeps privileged implementations private and denies raw table access even to staff', async () => {
+  const functions = await db.query<{ name: string; privileged: boolean }>(`
+    select p.proname as name, p.prosecdef as privileged
+    from pg_proc p join pg_namespace n on n.oid = p.pronamespace
+    where n.nspname = 'public' and p.proname like 'qna_%'
+  `)
+  expect(functions.rows).toHaveLength(6)
+  expect(functions.rows.every(fn => !fn.privileged)).toBe(true)
+  await asUser(operator, false)
+  for (const table of ['staff', 'questions', 'answers']) {
+    await expect(db.query(`select * from qna_private.${table}`)).rejects.toThrow(/permission denied/)
+  }
+  await expect(db.query('select public.qna_staff_list()')).resolves.toBeDefined()
+})

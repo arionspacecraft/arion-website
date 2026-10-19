@@ -25,24 +25,27 @@ create table qna_private.questions (
 );
 create index qna_public_order on qna_private.questions (created_at desc, id desc) where hidden_at is null;
 create index qna_author_rate on qna_private.questions (author_id, created_at desc);
+create index qna_hidden_by on qna_private.questions (hidden_by) where hidden_by is not null;
 create table qna_private.answers (
   question_id uuid primary key references qna_private.questions(id),
   body text not null check (char_length(btrim(body)) between 1 and 4000),
   answered_at timestamptz not null default now(),
   answered_by uuid not null references auth.users(id)
 );
+create index qna_answered_by on qna_private.answers (answered_by);
 alter table qna_private.staff enable row level security;
 alter table qna_private.questions enable row level security;
 alter table qna_private.answers enable row level security;
 revoke all on all tables in schema qna_private from public, anon, authenticated;
 
-create function public.qna_is_staff() returns boolean
+create function qna_private.qna_is_staff() returns boolean
 language sql stable security definer set search_path = '' as $$
-  select exists (select 1 from qna_private.staff where user_id = auth.uid())
+  select auth.uid() is not null and exists (select 1 from qna_private.staff where user_id = auth.uid())
     and coalesce((auth.jwt()->>'is_anonymous')::boolean, true) = false;
 $$;
 
-create function public.qna_list(p_query text default '', p_page integer default 0) returns jsonb
+-- This deliberately anonymous read exposes only the reviewed public projection.
+create function qna_private.qna_list(p_query text default '', p_page integer default 0) returns jsonb
 language sql stable security definer set search_path = '' as $$
   with matching as (
     select q.id, ''::text as nickname, q.public_title as title, q.public_body as body, q.created_at,
@@ -59,11 +62,11 @@ language sql stable security definer set search_path = '' as $$
     'questions', coalesce((select jsonb_agg(to_jsonb(page) order by created_at desc, id desc) from page), '[]'::jsonb));
 $$;
 
-create function public.qna_staff_list(p_filter text default 'pending', p_page integer default 0) returns jsonb
+create function qna_private.qna_staff_list(p_filter text default 'pending', p_page integer default 0) returns jsonb
 language plpgsql stable security definer set search_path = '' as $$
 declare result jsonb;
 begin
-  if not public.qna_is_staff() then raise exception 'QNA_FORBIDDEN' using errcode = '42501'; end if;
+  if not qna_private.qna_is_staff() then raise exception 'QNA_FORBIDDEN' using errcode = '42501'; end if;
   if p_filter is null or p_filter not in ('pending', 'published', 'hidden') then raise exception 'QNA_INVALID' using errcode = '22023'; end if;
   with matching as (
     select q.id, ''::text as nickname, coalesce(q.public_title, q.title) as title, coalesce(q.public_body, q.body) as body,
@@ -83,7 +86,7 @@ begin
 end;
 $$;
 
-create function public.qna_submit(p_name text, p_phone text, p_email text, p_title text, p_body text, p_request_id uuid) returns uuid
+create function qna_private.qna_submit(p_name text, p_phone text, p_email text, p_title text, p_body text, p_request_id uuid) returns uuid
 language plpgsql security definer set search_path = '' as $$
 declare caller uuid := auth.uid(); existing_id uuid;
 begin
@@ -113,10 +116,10 @@ begin
 end;
 $$;
 
-create function public.qna_answer(p_id uuid, p_body text, p_title text, p_question text) returns void
+create function qna_private.qna_answer(p_id uuid, p_body text, p_title text, p_question text) returns void
 language plpgsql security definer set search_path = '' as $$
 begin
-  if not public.qna_is_staff() then raise exception 'QNA_FORBIDDEN' using errcode = '42501'; end if;
+  if not qna_private.qna_is_staff() then raise exception 'QNA_FORBIDDEN' using errcode = '42501'; end if;
   if p_body is null or char_length(btrim(p_body)) not between 1 and 4000
     or p_title is null or char_length(btrim(p_title)) not between 1 and 100
     or p_question is null or char_length(btrim(p_question)) not between 1 and 2000 then
@@ -132,13 +135,49 @@ begin
 end;
 $$;
 
-create function public.qna_hide(p_id uuid) returns void
+create function qna_private.qna_hide(p_id uuid) returns void
 language plpgsql security definer set search_path = '' as $$
 begin
-  if not public.qna_is_staff() then raise exception 'QNA_FORBIDDEN' using errcode = '42501'; end if;
+  if not qna_private.qna_is_staff() then raise exception 'QNA_FORBIDDEN' using errcode = '42501'; end if;
   update qna_private.questions set hidden_at = now(), hidden_by = auth.uid() where id = p_id and hidden_at is null;
   if not found then raise exception 'QNA_NOT_FOUND' using errcode = 'P0002'; end if;
 end;
+$$;
+
+-- Privileged implementations stay outside the Data API's exposed schemas.
+-- USAGE/EXECUTE do not grant any direct table access; RLS remains deny-all.
+revoke all on all functions in schema qna_private from public, anon, authenticated;
+grant usage on schema qna_private to anon, authenticated;
+grant execute on function qna_private.qna_list(text, integer) to anon, authenticated;
+grant execute on function qna_private.qna_is_staff() to authenticated;
+grant execute on function qna_private.qna_staff_list(text, integer) to authenticated;
+grant execute on function qna_private.qna_submit(text, text, text, text, text, uuid) to authenticated;
+grant execute on function qna_private.qna_answer(uuid, text, text, text) to authenticated;
+grant execute on function qna_private.qna_hide(uuid) to authenticated;
+
+create function public.qna_is_staff() returns boolean
+language sql stable security invoker set search_path = '' as $$
+  select qna_private.qna_is_staff();
+$$;
+create function public.qna_list(p_query text default '', p_page integer default 0) returns jsonb
+language sql stable security invoker set search_path = '' as $$
+  select qna_private.qna_list(p_query, p_page);
+$$;
+create function public.qna_staff_list(p_filter text default 'pending', p_page integer default 0) returns jsonb
+language sql stable security invoker set search_path = '' as $$
+  select qna_private.qna_staff_list(p_filter, p_page);
+$$;
+create function public.qna_submit(p_name text, p_phone text, p_email text, p_title text, p_body text, p_request_id uuid) returns uuid
+language sql security invoker set search_path = '' as $$
+  select qna_private.qna_submit(p_name, p_phone, p_email, p_title, p_body, p_request_id);
+$$;
+create function public.qna_answer(p_id uuid, p_body text, p_title text, p_question text) returns void
+language sql security invoker set search_path = '' as $$
+  select qna_private.qna_answer(p_id, p_body, p_title, p_question);
+$$;
+create function public.qna_hide(p_id uuid) returns void
+language sql security invoker set search_path = '' as $$
+  select qna_private.qna_hide(p_id);
 $$;
 
 revoke all on function public.qna_is_staff() from public, anon, authenticated;
