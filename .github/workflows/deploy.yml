@@ -40,6 +40,8 @@ jobs:
         env:
           SITE_BASE_PATH: /${{ github.event.repository.name }}/
           NOTION_TOKEN: ${{ secrets.NOTION_TOKEN }}
+          VITE_SUPABASE_URL: ${{ vars.VITE_SUPABASE_URL }}
+          VITE_SUPABASE_PUBLISHABLE_KEY: ${{ vars.VITE_SUPABASE_PUBLISHABLE_KEY }}
       - name: Require successful Notion sync for branch validation
         if: github.ref != 'refs/heads/main' && steps.build.outputs.notion_state != 'ready'
         run: exit 1
