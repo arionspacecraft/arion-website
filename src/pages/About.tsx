@@ -43,7 +43,7 @@ export default function About() {
         <p className="lead">{t(vision.body)}</p>
       </Section>
 
-      <Section eyebrow="Activities" title={t("활동 내용")}>
+      <Section eyebrow="Activities" title={t("활동 내용")} className="section--cards">
         <ol className="grid grid--3 numbered">
           {activities.map((activity) => (
             <li key={activity.title} className="card">
