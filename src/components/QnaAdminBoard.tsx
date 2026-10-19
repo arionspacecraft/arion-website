@@ -12,8 +12,7 @@ export default function QnaAdminBoard({ api }: { api: QnaApi }) {
   useEffect(() => api.watchStaff(setStaff), [api])
   return <Section id="qna-admin" className="qna" title="Q&A 관리" eyebrow="ARION TEAM">
     <Link className="text-link" to="/qna">{t('공개 Q&A 보기')}</Link>
-    <StaffLogin api={api} staff={staff} />
-    {staff ? <Queue api={api} /> : <p className="qna__notice">{t('등록된 운영진 계정으로 로그인하면 접수된 질문과 연락처를 확인할 수 있습니다.')}</p>}
+    {staff ? <><StaffLogin api={api} /><Queue api={api} /></> : <p className="qna__notice">{t('운영진 인증이 필요합니다. Q&A의 질문 작성란에서 인증해 주세요.')}</p>}
   </Section>
 }
 

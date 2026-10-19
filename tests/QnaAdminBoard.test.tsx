@@ -39,16 +39,14 @@ async function submit(selector: string) { await act(async () => container.queryS
 async function authorize() { await act(async () => staffChanged(true)) }
 async function approveText() { await act(async () => container.querySelector<HTMLInputElement>('[type="checkbox"]')!.click()) }
 
-it('does not fetch or render private questions before a verified staff session, including after failed login', async () => {
+it('requires a verified staff session and directs visitors to Q&A without a separate login form', async () => {
   await mount()
   expect(api.staffList).not.toHaveBeenCalled()
   expect(container.textContent).not.toContain(question.email)
-  fill('#qna-email', 'visitor@example.test'); fill('#qna-password', 'incorrect')
-  vi.mocked(api.signIn).mockRejectedValueOnce(new Error('QNA_FORBIDDEN'))
-  await submit('.qna__login-form')
-  expect(api.staffList).not.toHaveBeenCalled()
-  expect(container.querySelector<HTMLInputElement>('#qna-password')?.value).toBe('')
-  expect(container.textContent).toContain('답변 권한이 없습니다.')
+  expect(container.querySelector('form')).toBeNull()
+  expect(container.querySelector('a[href="/qna"]')).not.toBeNull()
+  expect(container.textContent).toContain('Q&A의 질문 작성란에서 인증해 주세요.')
+  expect(api.signIn).not.toHaveBeenCalled()
 })
 it('shows private details only after authorization and publishes the reviewed copy with an answer', async () => {
   await mount(); await authorize()
