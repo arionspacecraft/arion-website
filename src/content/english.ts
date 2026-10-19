@@ -152,7 +152,7 @@ export const english: Record<string, string> = {
   '요청을 완료하지 못했습니다. 연결을 확인하고 다시 시도해 주세요. 작성 내용은 유지됩니다.': 'The request failed. Check your connection and try again. Your draft is still here.',
   '질문이 등록되었습니다. 모든 방문자가 볼 수 있습니다.': 'Your question has been published and is visible to everyone.',
   '등록 중…': 'Publishing…',
-  '질문 등록': 'Publish question',
+  '질문 등록': 'Submit question',
   '새로고침': 'Refresh',
   '질문을 불러오는 중…': 'Loading questions…',
   '질문을 불러오지 못했습니다. 다시 시도해 주세요.': 'Could not load questions. Please try again.',
