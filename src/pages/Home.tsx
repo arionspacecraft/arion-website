@@ -52,14 +52,11 @@ export default function Home() {
 
       <div className="journey__window" data-flight-stop="galaxy" aria-hidden="true" />
 
-      <Section eyebrow="THE TEAM BEHIND THE ROCKET" className="home-teams">
-        <div className="team-intro">
-          <div><h2>{t(home.teams.title)}<br /><span>{t(home.teams.accent)}</span></h2></div>
-          <div><p className="muted">{t(home.teams.description)}</p><Link className="text-link" to="/teams">{t("팀 자세히 보기")} <span aria-hidden="true">↗</span></Link></div>
-        </div>
+      <Section eyebrow="THE TEAM BEHIND THE ROCKET" title={`${t(home.teams.title)} ${t(home.teams.accent)}`} action={<Link className="text-link" to="/teams">{t("팀 자세히 보기")} <span aria-hidden="true">↗</span></Link>} className="home-teams">
+        <p className="section__description">{t(home.teams.description)}</p>
         <div className="team-deck">
           {teams.map((team, index) => (
-            <Link className="team-module" to="/teams" key={team.nameEn}>
+            <Link className="team-module" to={`/teams/${team.slug}`} key={team.slug}>
               <div className="team-module__top"><span className="mono">DIVISION / 0{index + 1}</span><span aria-hidden="true">↗</span></div>
               <h3>{t(team.name)}</h3><span className="team-module__en">{team.nameEn}</span>
               <p>{t(team.summary)}</p>

@@ -25,11 +25,11 @@ it('switches the whole site, retains the route, and remembers the language after
   mount('/contact')
   expect(container.textContent).toContain('길한겸')
   act(() => container.querySelector<HTMLButtonElement>('.language-toggle')!.click())
-  expect(container.querySelector('h1')?.textContent).toBe('Contact')
+  expect(container.querySelector('h1')?.textContent).toBe('Direct contact')
   expect(container.textContent).toContain('Hangyum Gil')
   expect(container.textContent).toContain('Woojin Jung')
   expect(document.documentElement.lang).toBe('en')
-  expect(document.title).toBe('Contact | ARION')
+  expect(document.title).toBe('Direct contact | ARION')
   expect(localStorage.getItem('arion-language')).toBe('en')
   act(() => root.render(null)); mount('/about')
   expect(container.querySelector('h1')?.textContent).toBe('About ARION')
@@ -38,7 +38,7 @@ it('switches the whole site, retains the route, and remembers the language after
   expect(document.documentElement.lang).toBe('ko')
 })
 
-it.each(['/', '/about', '/teams', '/projects', '/projects/test-project', '/news', '/news/hybrid-study-start', '/news/club-booth', '/news/recruit-2026', '/recruit', '/contact', '/missing'])(
+it.each(['/', '/about', '/teams', '/teams/airframe', '/teams/propulsion', '/teams/avionics', '/teams/recovery', '/teams/administration', '/projects', '/projects/test-project', '/news', '/news/hybrid-study-start', '/news/club-booth', '/news/recruit-2026', '/recruit', '/contact', '/qna', '/missing'])(
   'renders English page copy and accessible names on %s', path => {
     localStorage.setItem('arion-language', 'en'); mount(path)
     const siteCopy = container.cloneNode(true) as HTMLElement

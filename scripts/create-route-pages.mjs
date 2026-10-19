@@ -3,14 +3,16 @@ import { fileURLToPath } from 'node:url'
 import { join } from 'node:path'
 import { projects } from '../src/content/projects.ts'
 import { news } from '../src/content/news.ts'
+import { teams } from '../src/content/teams.ts'
 
 // GitHub Pages has no SPA rewrite rule. Give every published route an entry
 // document so direct links and refreshes return HTTP 200, with the same app.
 const output = fileURLToPath(new URL('../dist/', import.meta.url))
 const html = await readFile(join(output, 'index.html'), 'utf8')
 const routes = [
-  'about', 'projects', 'teams', 'news', 'recruit', 'contact',
+  'about', 'projects', 'teams', 'news', 'recruit', 'contact', 'qna',
   ...projects.map(({ slug }) => `projects/${slug}`),
+  ...teams.map(({ slug }) => `teams/${slug}`),
   ...news.map(({ slug }) => `news/${slug}`),
 ]
 

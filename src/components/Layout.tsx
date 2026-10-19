@@ -10,7 +10,11 @@ export default function Layout() {
   const { pathname } = useLocation()
 
   useEffect(() => {
-    window.scrollTo({ top: 0, behavior: 'instant' })
+    // Honor an initial section link; in-page anchor clicks keep native scrolling.
+    const anchor = window.location.hash.slice(1)
+    const target = anchor ? document.getElementById(anchor) : null
+    if (target) target.scrollIntoView({ block: 'start', behavior: 'instant' })
+    else window.scrollTo({ top: 0, behavior: 'instant' })
     const observer = new IntersectionObserver((entries) => {
       entries.forEach((entry) => {
         if (entry.isIntersecting) {
